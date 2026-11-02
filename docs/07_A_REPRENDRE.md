@@ -15,6 +15,23 @@ Notre format est **VST3 uniquement** (ADR 0003).
 
 Cette décision est l'ADR 0001 de chaque projet de plugin (`docs/06_PLAN_DEMARRAGE.md`, phase 0). Tant qu'elle n'est pas prise, on n'utilise que du MIT/BSD : ça reste valable dans les deux cas.
 
+## En bref : quoi prendre selon la licence
+
+| Besoin | Plugin fermé (MIT/BSD/Apache seulement) | Plugin AGPL (GPL v3 aussi) |
+| --- | --- | --- |
+| Build, CI, tests | Pamplejuce adapté | idem |
+| DSP de base | `juce_dsp`, Signalsmith DSP, HIIR, math_approx | idem + sst-filters, sst-waveshapers, sst-effects, chowdsp GPL |
+| Synthèse | mda JX10/DX10, moteur `msfa` de Dexed | idem + OB-Xf (filtre, BLEP, ADSR) |
+| Modélisation analogique | chowdsp_wdf, RTNeural | idem + cœurs WDF de BYOD |
+| Réverbe | Cloud Seed (à patcher) | idem + sst-effects, chowdsp_reverb |
+| Couleur, saturation | Airwindows via airwin2rack | idem |
+| Paramètres, état, presets | chowdsp_parameters, chowdsp_version ; plugin_state et presets_v2 après retrait des 2 fichiers GPL | chowdsp complet |
+| Modulation | Gin `gin_plugin`, après correction temps réel | idem, ou `FixedMatrix` de sst-basic-blocks |
+| Temps réel | farbot, readerwriterqueue, sst-cpputils, RTSan | idem |
+| UI | foleys_gui_magic (analyseur), sst-jucegui, gin_gui, ff_meters, melatonin | idem + chowdsp_gui |
+
+Aucun projet étudié ne coche toutes nos règles temps réel : même les meilleurs allouent, verrouillent ou lisent l'UI sur le thread audio quelque part (lignes exactes dans les fiches). Tout code repris passe donc par `rt-safety-reviewer` et RTSan avant d'entrer dans `dsp/`.
+
 ## 1. Le squelette : ne rien écrire
 
 | Brique | Source | Licence | Ce qu'on évite de coder |
@@ -53,6 +70,9 @@ Limite : ces classes dépendent de JUCE, donc elles vivent dans `plugin/` ou dan
 | [HIIR](http://ldesoras.free.fr/prod.html) | WTFPL v2 | Oversampling demi bande polyphase IIR (2x en cascade) autour des non linéarités | Oui, header only | Oui | idem |
 | chowdsp_utils, modules BSD : `chowdsp_math`, `chowdsp_simd`, `chowdsp_buffers`, `chowdsp_data_structures` | BSD 3 | Maths vectorielles, SIMD (xsimd), buffers, buffer circulaire, allocateurs | Oui, mais ils définissent leur propre namespace `juce` : ne pas les exposer dans un en tête public de `dsp/` | Oui | [chowdsp_utils](references/chowdsp-utils.md) |
 | chowdsp_utils, modules GPL : `filters`, `eq`, `waveshapers`, `sources`, `reverb`, `compressor`, `dsp_utils`, `modal_dsp`, **`dsp_data_structures`** | GPL v3 | Filtres d'ordre élevé, EQ (dont phase linéaire), clippers ADAA, wavefolder, oscillateurs anti aliasés, FDN, compresseur, pitch shifter, `RealtimeLatestObject` | Variable | Non | idem |
+| [Dexed](https://github.com/asb2m10/dexed) moteur `source/msfa/` | Apache 2.0 (en tête de chaque fichier) ; `tuning.*` en GPL et lié à JUCE | Moteur FM 6 opérateurs du DX7. Couper trois couplages : Logger, MTS-ESP, tables statiques globales | Oui | Oui | [dexed-obxd-odin2](references/dexed-obxd-odin2.md) |
+| [OB-Xf](https://github.com/surge-synthesizer/OB-Xf) | GPL v3+ | Filtre ZDF OB-X/Xpander, oscillateurs BLEP, ADSR, décimateurs | Oui | Non | idem |
+| [mda-plugins-juce](https://github.com/hollance/mda-plugins-juce) | MIT | 24 plugins : JX10 (synthé soustractif), DX10 (FM), Piano, EPiano, Detune, Dither, Image (M/S), Bandisto, TestTone… À compléter par lissage, latence et graine | Oui, presque tout le DSP | Oui | [mda-et-frequalizer](references/mda-et-frequalizer.md) |
 | [chowdsp_wdf](https://github.com/Chowdhury-DSP/chowdsp_wdf) | BSD 3 | Wave Digital Filters : modélisation de circuits analogiques (pédales, préamps), utilisé par BYOD | Oui | Oui | [BYOD et valentine](references/byod-et-valentine.md) |
 | [RTNeural](https://github.com/jatinchowdhury18/RTNeural) | BSD 3 | Inférence de réseaux de neurones en temps réel (modélisation d'amplis par apprentissage) | Oui | Oui | idem |
 | [math_approx](https://github.com/Chowdhury-DSP/math_approx) | BSD 3 | Approximations rapides de tanh, exp, log, sin pour la saturation et les filtres | Oui | Oui | idem |

@@ -22,5 +22,6 @@ Playbook (base de connaissances), pas un plugin. Version initiale du 2026-11-02.
 
 * Adopter ou non le patch d'automation sample accurate de TetraDrive (à tester sur JUCE 9).
 * ~~Choix du compteur d'allocation pour les tests temps réel~~ : tranché, RealtimeSanitizer (ADR 0002).
-* Licences marquées *à vérifier* dans `docs/07_A_REPRENDRE.md`.
+* Licences restant à vérifier : MTS-ESP, assets d'OB-Xf, formes d'onde AKWF (CC0 ?), provenance des IR et modèles neuronaux de BYOD.
+* Étudier les 3 bugs supposés de valentine et ceux de Frequalizer seulement si on reprend leur code (relevés par lecture, non compilés).
 * Format exact de `tests/golden/manifest.json`.

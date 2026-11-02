@@ -55,17 +55,21 @@ Documentation : [melatonin.dev/manuals/pamplejuce](https://melatonin.dev/manuals
 
 ## Autres projets à lire
 
-| Projet | Quoi | Pourquoi le lire | Licence |
-| --- | --- | --- | --- |
-| [Surge XT](https://github.com/surge-synthesizer/surge) | Synthé hybride, très actif | Gros projet bien tenu : modulation, presets, tests, CI multiplateforme | GPL v3 |
-| [Vital](https://github.com/mtytel/vital) | Synthé wavetable | Matrice de modulation et UI temps réel de référence | GPL v3 |
-| [chowdsp_utils](https://github.com/Chowdhury-DSP/chowdsp_utils) | Modules DSP JUCE | DSP propre et réutilisable | BSD |
-| [BYOD](https://github.com/Chowdhury-DSP/BYOD) | Distorsion modulaire | Chaîne de processeurs réordonnable | GPL v3 |
-| [valentine](https://github.com/tote-bag-labs/valentine) | Compresseur | Plugin d'effet complet, taille raisonnable | GPL v3 |
-| [Dexed](https://github.com/asb2m10/dexed) | Émulation DX7 | Synthèse FM, presets | GPL v3 |
-| [OB-Xd](https://github.com/reales/OB-Xd), [Odin 2](https://github.com/TheWaveWarden/odin2) | Synthés analogiques virtuels | Filtres et oscillateurs modélisés | GPL v3 |
-| [mda-plugins-juce](https://github.com/hollance/mda-plugins-juce) | Plugins MDA réécrits en JUCE | Petits et lisibles, idéaux pour apprendre | Voir repo |
-| [Frequalizer](https://github.com/ffAudio/Frequalizer) | EQ avec analyseur | Analyseur de spectre, courbes de filtres | Voir repo |
+Tous étudiés dans le code le 2026-11-02 ; licences vérifiées dans les fichiers. Le détail est dans la fiche liée.
+
+| Projet | Quoi | Licence vérifiée | Verdict | Fiche |
+| --- | --- | --- | --- | --- |
+| [Surge XT](https://github.com/surge-synthesizer/surge) et bibliothèques sst | Synthé hybride, très actif | Surge GPL v3 ; sst-cpputils, sst-plugininfra, sst-jucegui MIT ; sst-filters, waveshapers, effects GPL v3 | Les bibliothèques sst sont la meilleure source de DSP prêt à brancher. Surge lui même verrouille un mutex dans `process()` | [surge-et-sst](references/surge-et-sst.md) |
+| [Vital](https://github.com/mtytel/vital) | Synthé wavetable | GPL v3 ou ultérieure, noms protégés | Figé depuis avril 2022 (JUCE 6, Projucer, pas de CI). Une quinzaine d'idées, peu de code réutilisable | [vital](references/vital.md) |
+| [chowdsp_utils](https://github.com/Chowdhury-DSP/chowdsp_utils) | Modules JUCE | BSD 3 ou GPL v3 selon le module | Modules état et presets utiles, mais deux d'entre eux tirent un fichier GPL | [chowdsp-utils](references/chowdsp-utils.md) |
+| [Gin](https://github.com/FigBug/Gin) | Modules JUCE (plugin, DSP, UI) | BSD 3 | Matrice de modulation à rendre sûre en temps réel avant usage | [gin](references/gin.md) |
+| [BYOD](https://github.com/Chowdhury-DSP/BYOD) | Distorsion modulaire, 69 processeurs | GPL v3 ; dépendances chowdsp_wdf, RTNeural, math_approx en BSD 3 | Ses dépendances BSD et ses paramètres de redirection valent plus que le plugin | [byod-et-valentine](references/byod-et-valentine.md) |
+| [valentine](https://github.com/tote-bag-labs/valentine) | Compresseur | GPL v3 | Bonne CI (pluginval 10 sur 3 OS), DSP lié à JUCE, tests quasi vides | idem |
+| [Dexed](https://github.com/asb2m10/dexed) | Émulation DX7 | GPL v3, **moteur `msfa/` en Apache 2.0** | Le moteur FM est réutilisable même en plugin fermé | [dexed-obxd-odin2](references/dexed-obxd-odin2.md) |
+| [OB-Xf](https://github.com/surge-synthesizer/OB-Xf) (fork d'OB-Xd) | Analogique virtuel | GPL v3+ | **OB-Xd n'est plus open source** (source retiré en février 2026). OB-Xf est actif, 131 tests Catch2 en CI | idem |
+| [Odin 2](https://github.com/TheWaveWarden/odin2) | Synthé semi modulaire | GPL v3 | JUCE 6, pas de tests, alloue sur le thread audio : idées seulement | idem |
+| [mda-plugins-juce](https://github.com/hollance/mda-plugins-juce) | 24 plugins MDA réécrits | **MIT** | DSP presque sans JUCE, facile à extraire. Pas de lissage ni de latence déclarée | [mda-et-frequalizer](references/mda-et-frequalizer.md) |
+| [Frequalizer](https://github.com/ffAudio/Frequalizer) | EQ avec analyseur | BSD 3 (logos exclus) | Ne compile pas sur JUCE 9, abandonné en 2022. Prendre plutôt l'analyseur de foleys_gui_magic | idem |
 
 Liste complète, tenue à jour : [awesome-juce](https://github.com/sudara/awesome-juce).
 
