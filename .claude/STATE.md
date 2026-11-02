@@ -1,0 +1,28 @@
+# STATE
+
+Maintenu à la main. Une tâche ne se ferme pas sans mettre ce fichier à jour.
+
+## Ce repo
+
+Playbook (base de connaissances), pas un plugin. Version initiale du 2026-11-02.
+
+## Dans un projet de plugin, ce fichier contient
+
+| Champ | Valeur |
+| --- | --- |
+| Plugin en cours | MoodzFilter (`docs/plugins/moodzfilter/`) |
+| Phase en cours | 0 (décider) : SPEC figée, ADR licence AGPL acceptée, ADR identité proposée |
+| Gate à passer | Valider `COMPANY_NAME` et les codes plugin (ADR 0002 MoodzFilter), puis phase 1 |
+| Tâche en cours | — |
+| Version JUCE épinglée | — |
+| Budget CPU par bloc | — |
+| Défauts connus (son, perf, hôtes) | — |
+| Ordre recommandé des prochaines tâches | — |
+
+## Questions ouvertes du playbook
+
+* Adopter ou non le patch d'automation sample accurate de TetraDrive (à tester sur JUCE 9).
+* ~~Choix du compteur d'allocation pour les tests temps réel~~ : tranché, RealtimeSanitizer (ADR 0002).
+* Licences restant à vérifier : MTS-ESP, assets d'OB-Xf, formes d'onde AKWF (CC0 ?), provenance des IR et modèles neuronaux de BYOD.
+* Étudier les 3 bugs supposés de valentine et ceux de Frequalizer seulement si on reprend leur code (relevés par lecture, non compilés).
+* Format exact de `tests/golden/manifest.json`.
