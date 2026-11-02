@@ -31,8 +31,8 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 - [x] Pin JUCE 9 to a tag, remove AU, AUv3, CLAP, Standalone · task 0001, JUCE 9.0.5, VST3 only, https://github.com/Wieedze/MoodzFilter/pull/1
 - [x] Separate the dsp, plugin, ui, tools targets · task 0002, dsp/ without JUCE, configure-time check, https://github.com/Wieedze/MoodzFilter/pull/2
 - [x] Smoothed gain alone, with TDD · task 0003, exact gain, NaN, block size, state, frozen IDs, https://github.com/Wieedze/MoodzFilter/pull/4
-- [~] tools render and compare, first golden reference · task 0004
-- [ ] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10
+- [x] tools render and compare, first golden reference · task 0004, render, compare and check, golden references approved by ear, https://github.com/Wieedze/MoodzFilter/pull/5
+- [~] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10, also [[clang::nonblocking]] (clang ≥ 20) and strict C++23 for PluginTests (gnu++23 inherited from Pamplejuce)
 - [ ] Load the VST3 in Ableton Live · phase 1 gate
 
 ## p2 · Phase 2 · DSP core
