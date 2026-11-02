@@ -23,6 +23,7 @@ Tout chiffre audio écrit dans un rapport, un commit ou une doc (dB, ms, échant
 3. `code-review`.
 4. `task-verifier`.
 5. Si pass : post mortem dans `.claude/learning/`, `STATE.md` mis à jour, note de fin dans le fichier de tâche.
+6. Inscrire l'entrée dans le journal de l'index du projet (onglet Décisions de l'artefact VstKnowledgeBase, collection `journal` de sa base) : une entrée par ADR, par post mortem et par gate franchi, avec un lien vers le fichier du repo. Mettre à jour le document `projet/etat` quand la phase change. Le repo reste la source : le journal n'est qu'un index.
 
 ## Commits
 
