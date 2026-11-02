@@ -11,3 +11,7 @@ Demandé ou imaginé, volontairement pas construit maintenant. Une ligne par id�
 * 2026-11-02 : un repo template "plugin vierge" prêt à cloner (Pamplejuce + ce playbook + cibles dsp/plugin/ui/tools déjà en place).
 * 2026-11-02 : un skill Claude Code `juce-plugin` qui encapsule les règles temps réel et la boucle de tâche.
 * 2026-11-02 : fiches de lecture détaillées par projet de référence (Surge, Vital, chowdsp) dans `docs/references/`.
+
+## MoodzFilter (hors v1, voir `docs/plugins/moodzfilter/SPEC.md`)
+
+* 2026-11-02 : suiveur d'enveloppe ; décalage de phase stéréo du LFO ; mid/side ; matrice de modulation et destinations autres que le cutoff ; interface dessinée et analyseur ; suivi des notes MIDI ; sidechain ; macOS et Linux ; plus de 4 modèles de filtre.

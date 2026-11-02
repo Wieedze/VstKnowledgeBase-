@@ -10,8 +10,9 @@ Playbook (base de connaissances), pas un plugin. Version initiale du 2026-11-02.
 
 | Champ | Valeur |
 | --- | --- |
-| Phase en cours | 0 (décider) |
-| Gate à passer | SPEC figée + ADR licence + ADR formats |
+| Plugin en cours | MoodzFilter (`docs/plugins/moodzfilter/`) |
+| Phase en cours | 0 (décider) : SPEC figée, ADR licence AGPL acceptée, ADR identité proposée |
+| Gate à passer | Valider `COMPANY_NAME` et les codes plugin (ADR 0002 MoodzFilter), puis phase 1 |
 | Tâche en cours | — |
 | Version JUCE épinglée | — |
 | Budget CPU par bloc | — |
