@@ -38,7 +38,9 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 
 ## p2 · Phase 2 · DSP core
 
-- [ ] Plug in sst-filters, listen and choose the 4 models · choice recorded by ADR
+- [x] Integrate sst-filters in the dsp layer · task 0007, ADR 0005, GPL v3 via CPM, 7 low pass candidates listed, https://github.com/Wieedze/MoodzFilter/pull/9
+- [~] Listen to the 7 low pass candidates and choose the 4 models · task 0008, Cytomic SVF, Vember Classic 24 dB, Vintage Ladder, OB-Xd 4-pole 24 dB, OB-Xd 2-pole, Diode Ladder 24 dB, K35; choice recorded by ADR
+- [ ] Plugin parameters Model, Mode, Cutoff, Resonance · task 0009
 - [ ] Input drive with 2x and 4x oversampling · latency reported, dry path delayed
 - [ ] BPM-synced LFO on the cutoff · block size test with the LFO active
 - [ ] Dry/wet mix, in/out gains, smoothing everywhere
