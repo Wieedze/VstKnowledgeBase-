@@ -1,7 +1,7 @@
 # 0002 — Plugin identity and platform
 
 **Date**: 2026-11-02
-**Status**: proposed (the codes become final at the first build loaded in a DAW, in phase 1)
+**Status**: accepted (the codes become final at the first build loaded in a DAW, in phase 1)
 
 ## Context
 
@@ -9,17 +9,19 @@ JUCE requires a product name, a manufacturer name and two 4-character codes. Onc
 
 ## Options considered
 
-The proposal below is the only option recorded. The open point is `COMPANY_NAME`: Moodz, Radikal Moodz or another name.
+1. Manufacturer `Moodz`, code `Mood`: short, matches the plugin name.
+2. Manufacturer `Radikal Moodz`, code `Rdkm`: Maxime's artist name.
+3. Manufacturer `Wieedze` or `Transubtil`: developer handle or the label.
 
 ## Decision
 
-The proposed identity is MoodzFilter by Moodz, codes `Mood` and `Mzf1`, VST3 only, Windows only for v1.
+MoodzFilter by Radikal Moodz, manufacturer code `Rdkm`, plugin code `Mzf1`, VST3 only, Windows only for v1.
 
-| CMake field | Proposed value |
+| CMake field | Value |
 | --- | --- |
 | `PRODUCT_NAME` | MoodzFilter |
-| `COMPANY_NAME` | Moodz |
-| `PLUGIN_MANUFACTURER_CODE` | `Mood` |
+| `COMPANY_NAME` | Radikal Moodz |
+| `PLUGIN_MANUFACTURER_CODE` | `Rdkm` |
 | `PLUGIN_CODE` | `Mzf1` |
 | `FORMATS` | `VST3` |
 | `IS_SYNTH` | `FALSE` |
@@ -28,4 +30,4 @@ The proposed identity is MoodzFilter by Moodz, codes `Mood` and `Mzf1`, VST3 onl
 
 ## Consequences
 
-No Apple signing or notarisation to plan for in v1. The Linux job remains necessary, because RealtimeSanitizer does not run on Windows. To validate before phase 1: `COMPANY_NAME` (Moodz, Radikal Moodz or other).
+The plugin shows up in Ableton under "Radikal Moodz". Later plugins by the same maker reuse `Rdkm` and take their own plugin code. No Apple signing or notarisation to plan for in v1. The Linux job remains necessary, because RealtimeSanitizer does not run on Windows. Once a Live session is saved with the plugin, none of these codes may change.
