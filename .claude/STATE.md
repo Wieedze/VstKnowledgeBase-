@@ -15,18 +15,20 @@ Playbook (knowledge base), not a plugin. Initial version of 2026-11-02. PR #1 an
 | Gate to pass | Gate 1: green CI, green pluginval 10, VST3 loaded in the DAW (Ableton Live, Windows), `STATE.md` up to date |
 | Plugin identity (ADR 0002) | `COMPANY_NAME` Radikal Moodz, `PLUGIN_MANUFACTURER_CODE` `Rdkm`, `PLUGIN_CODE` `Mzf1`, VST3 only, Windows only for v1. Final once a session is saved in Live |
 | Plugin repo | https://github.com/Wieedze/MoodzFilter (code, task files in `docs/tasks/`, its own `.claude/STATE.md`). SPEC, ROADMAP, plugin ADRs and post-mortems stay in this playbook under `docs/plugins/moodzfilter/` (decided 2026-11-02) |
-| Last task closed | 0002 "Separate the dsp, plugin, ui, tools targets", verifier pass on 2026-11-02 (2 rounds), post-mortem `docs/plugins/moodzfilter/learning/0002-separate-targets.md`. PR https://github.com/Wieedze/MoodzFilter/pull/2, stacked on PR #1. Previous: 0001 "Initialise the repo from Pamplejuce", PR https://github.com/Wieedze/MoodzFilter/pull/1 |
-| Open PRs | MoodzFilter PR #1 and PR #2, both awaiting Maxime's merge. Merge #1 first, then #2 |
-| Current task | 0003 "Smoothed gain alone, with TDD" (in progress; also adds the missing `[[clang::nonblocking]]` on `processBlock`, noted by `rt-safety-reviewer` in task 0002) |
+| Last task closed | 0003 "Smoothed gain alone, with TDD" (smoothed output gain `Gain out`, versioned state, frozen ID list), verifier pass on 2026-11-02 (2 rounds), post-mortem `docs/plugins/moodzfilter/learning/0003-smoothed-gain.md`. PR https://github.com/Wieedze/MoodzFilter/pull/4. Previous: 0002 "Separate the dsp, plugin, ui, tools targets" (PR #2) and 0001 "Initialise the repo from Pamplejuce" (PR #1), both merged into MoodzFilter main (also via PR #3) |
+| Open PRs | MoodzFilter PR #4 (task 0003), awaiting Maxime's merge |
+| Current task | 0004 "tools render and compare, first golden reference" (in progress) |
 | Pinned JUCE version | 9.0.5 (git submodule tag, no branch in `.gitmodules`) |
 | CPU budget per block | — |
 | Known defects (sound, perf, hosts) | — |
-| Gate 1 progress | CI Linux and Windows green on run 41461476342 (commit `aaab18e`, task 0001) and on runs 41477871641 and 41480714455 (task 0002), pluginval 10 green locally and in CI. Still missing: VST3 loaded in Ableton Live on Windows |
-| Recommended order of next tasks | Phase 1 lane of `docs/plugins/moodzfilter/ROADMAP.md` (tasks 0001 and 0002 done): 0. Merge MoodzFilter PR #1, then PR #2. 1. Task 0003, smoothed gain alone, with TDD. 2. `tools render` and `compare`, first golden reference (task 0004). 3. Green CI (Windows, Linux RealtimeSanitizer job, pluginval 10). 4. Load the VST3 in Ableton Live. Playbook lane still open: independent agent check of the repo, remaining licences |
+| Gate 1 progress | CI Linux and Windows green on run 41461476342 (commit `aaab18e`, task 0001), runs 41477871641 and 41480714455 (task 0002) and run 41490179737 (task 0003, commit `6682553`). pluginval 10 green locally and in CI. Still missing: VST3 loaded in Ableton Live on Windows |
+| Deferred to the Green CI task | `[[clang::nonblocking]]` on `processBlock` and the DSP `process` functions, and the Linux RealtimeSanitizer job. Both need clang ≥ 20; the dev container has clang 18. Moved out of task 0003 by its Out of scope |
+| Development environment (not decided) | Maxime is considering moving development to his own Windows machine with VS Code + Claude Code, for faster builds and direct testing in Ableton Live. No decision yet |
+| Recommended order of next tasks | Phase 1 lane of `docs/plugins/moodzfilter/ROADMAP.md` (tasks 0001 to 0003 done): 0. Merge MoodzFilter PR #4. 1. Task 0004, `tools render` and `compare`, first golden reference. 2. Green CI (Windows, Linux RealtimeSanitizer job with clang ≥ 20, `[[clang::nonblocking]]`, pluginval 10). 3. Load the VST3 in Ableton Live. Playbook lane still open: independent agent check of the repo, remaining licences |
 
 ## Open questions of the playbook
 
-* Whether to adopt TetraDrive's sample accurate automation patch (to be tested on JUCE 9).
+* Whether to adopt TetraDrive's sample accurate automation patch (to be tested on JUCE 9). MoodzFilter now reads parameters once per block (task 0003), so under continuous automation the gain curve depends on the host block size; sample-accurate automation is recorded in the MoodzFilter repo's `FUTURE.md` and depends on this question.
 * ~~Choice of allocation counter for real-time tests~~: settled, RealtimeSanitizer (ADR 0002).
 * Licenses still to check: MTS-ESP, OB-Xf assets, AKWF waveforms (CC0?), provenance of BYOD's IRs and neural models.
 * Study the 3 suspected bugs in valentine and those in Frequalizer only if we reuse their code (found by reading, not compiled).
