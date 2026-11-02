@@ -1,8 +1,8 @@
 ---
 plugin: MoodzFilter
-phase: 1
-phase_title: Skeleton
-gate: Green CI, green pluginval 10, VST3 loaded in the DAW, STATE.md up to date
+phase: 2
+phase_title: DSP core
+gate: DSP tests and golden references green, CPU budget set in benchmarks/budget.json and met, listening approved
 updated: 2026-11-02
 ---
 
@@ -33,8 +33,8 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 - [x] Smoothed gain alone, with TDD · task 0003, exact gain, NaN, block size, state, frozen IDs, https://github.com/Wieedze/MoodzFilter/pull/4
 - [x] tools render and compare, first golden reference · task 0004, render, compare and check, golden references approved by ear, https://github.com/Wieedze/MoodzFilter/pull/5
 - [x] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10 · task 0005, [[clang::nonblocking]] under RTSan with a canary, strict C++23 everywhere, https://github.com/Wieedze/MoodzFilter/pull/6
-- [~] Gain out −∞ to +6 dB and generic editor · task 0006, ADR 0004
-- [~] Load the VST3 in Ableton Live (gate) · loaded and Gain out works 2026-11-02; save/reload pending
+- [x] Gain out −∞ to +6 dB and generic editor · task 0006, ADR 0004, -inf floor, JUCE generic editor, tools snapshot, https://github.com/Wieedze/MoodzFilter/pull/7
+- [x] Load the VST3 in Ableton Live (gate) · passed 2026-11-02, session saved and reloaded with Gain out kept
 
 ## p2 · Phase 2 · DSP core
 

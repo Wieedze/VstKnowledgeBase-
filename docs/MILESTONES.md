@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-02 · MoodzFilter gate 1 passed
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/7
+
+The skeleton is done. Task 0006 passed the task-verifier in one round: Gain out now goes from -inf to +6 dB (ADR 0004) and the plugin shows the JUCE generic editor. Maxime installed the VST3 from the CI installer of run 41524747297, loaded it in Ableton Live on Windows, set Gain out, saved the session and reloaded it with the value kept. CI is green on Linux, Linux RealtimeSanitizer and Windows, pluginval at strictness 10 passes, and the golden references were approved by ear. MoodzFilter moves to phase 2, the DSP core.
+
 ## 2026-11-02 · MoodzFilter runs in Ableton Live
 
 Project: MoodzFilter
