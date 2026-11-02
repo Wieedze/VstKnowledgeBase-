@@ -1,21 +1,21 @@
 # FUTURE
 
-Demandé ou imaginé, volontairement pas construit maintenant. Une ligne par idée, avec la date et le contexte. Une idée sort d'ici seulement par une SPEC ou un amendement de SPEC.
+Requested or imagined, deliberately not built now. One line per idea, with the date and the context. An idea only leaves this file through a SPEC or a SPEC amendment.
 
-## Formats (hors périmètre, ADR 0003)
+## Formats (out of scope, ADR 0003)
 
-* 2026-11-02 : AU / AUv3 (Logic Pro), CLAP (clap-juce-extensions, déjà étudié dans `docs/references/melatonin-et-clap.md`), Standalone. Chacun demanderait sa propre validation en CI.
+* 2026-11-02: AU / AUv3 (Logic Pro), CLAP (clap-juce-extensions, already studied in `docs/references/melatonin-and-clap.md`), Standalone. Each would need its own validation in CI.
 
 ## Playbook
 
-* 2026-11-02 : un repo template "plugin vierge" prêt à cloner (Pamplejuce + ce playbook + cibles dsp/plugin/ui/tools déjà en place).
-* 2026-11-02 : un skill Claude Code `juce-plugin` qui encapsule les règles temps réel et la boucle de tâche.
-* 2026-11-02 : fiches de lecture détaillées par projet de référence (Surge, Vital, chowdsp) dans `docs/references/`.
+* 2026-11-02: a "blank plugin" template repo ready to clone (Pamplejuce + this playbook + dsp/plugin/ui/tools targets already in place).
+* 2026-11-02: a Claude Code `juce-plugin` skill that wraps the real-time rules and the task loop.
+* 2026-11-02: detailed reading notes per reference project (Surge, Vital, chowdsp) in `docs/references/`.
 
-## MoodzFilter (hors v1, voir `docs/plugins/moodzfilter/SPEC.md`)
+## MoodzFilter (out of v1, see `docs/plugins/moodzfilter/SPEC.md`)
 
-* 2026-11-02 : suiveur d'enveloppe ; décalage de phase stéréo du LFO ; mid/side ; matrice de modulation et destinations autres que le cutoff ; interface dessinée et analyseur ; suivi des notes MIDI ; sidechain ; macOS et Linux ; plus de 4 modèles de filtre.
+* 2026-11-02: envelope follower; stereo phase offset of the LFO; mid/side; modulation matrix and destinations other than the cutoff; custom-drawn interface and analyser; MIDI note tracking; sidechain; macOS and Linux; more than 4 filter models.
 
-## Après MoodzFilter
+## After MoodzFilter
 
-* 2026-11-02 : un VST communautaire. Les gens votent en ligne sur les fonctionnalités, et chaque semaine on implémente le vote gagnant. Préalable : finir MoodzFilter de bout en bout pour savoir ce que l'index doit contenir. Points à trancher le moment venu : où voter (le public ne peut pas écrire dans un artefact claude.ai, il faut GitHub ou un site à soi), qui trie les propositions avant le vote, comment une semaine de vote passe par grilling, SPEC et ADR sans casser les règles temps réel ni les IDs de paramètres, et la signature des binaires pour une diffusion publique.
+* 2026-11-02: a community VST. People vote online on features, and each week we implement the winning vote. Prerequisite: finish MoodzFilter end to end to know what the index must contain. Points to settle when the time comes: where to vote (the public cannot write into a claude.ai artifact, so it needs GitHub or a site of our own), who sorts the proposals before the vote, how a week of voting goes through grilling, SPEC and ADR without breaking the real-time rules or the parameter IDs, and binary signing for public distribution.

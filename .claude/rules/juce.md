@@ -1,28 +1,28 @@
-# Règles JUCE
+# JUCE rules
 
-## Paramètres
+## Parameters
 
-* Tous les paramètres sont déclarés dans un seul fichier (`plugin/Parameters.*`) : ID, nom, plage, défaut, texte affiché.
-* Les IDs sont des constantes, jamais des chaînes répétées.
-* **Après la première release, un ID ne se renomme ni ne se supprime.** Un paramètre obsolète reste déclaré et ignoré. Un test fige la liste.
-* Version de paramètre (`ParameterID{ id, version }`) incrémentée à chaque ajout.
-* Le DSP ne lit jamais l'APVTS : la couche `plugin/` remplit un snapshot `Params` par bloc.
-* Invariants entre paramètres (ordre, écarts minimum) appliqués dans le snapshot et testés.
+* All parameters are declared in a single file (`plugin/Parameters.*`): ID, name, range, default, displayed text.
+* IDs are constants, never repeated strings.
+* **After the first release, an ID is never renamed or deleted.** An obsolete parameter stays declared and ignored. A test freezes the list.
+* Parameter version (`ParameterID{ id, version }`) incremented on every addition.
+* The DSP never reads the APVTS: the `plugin/` layer fills a `Params` snapshot per block.
+* Invariants between parameters (order, minimum gaps) applied in the snapshot and tested.
 
-## État
+## State
 
-* L'état sauvé porte un numéro de version.
-* `setStateInformation` sait charger toutes les versions passées ; chaque valeur manquante a un repli documenté.
-* On liste ce qui n'est **pas** dans les presets (bypass, solo, réglages de session).
-* Des fichiers d'état de chaque version publiée sont gardés dans `tests/plugin/states/`.
+* The saved state carries a version number.
+* `setStateInformation` can load every past version; each missing value has a documented fallback.
+* List what is **not** in presets (bypass, solo, session settings).
+* State files from each published version are kept in `tests/plugin/states/`.
 
-## Processeur
+## Processor
 
-* `setLatencySamples` appelé dès que la latence change, et la latence est constante autant que possible.
-* `getTailLengthSeconds` renseigné pour les effets à queue (réverbe, délai).
-* Bus layouts : déclarer précisément ce qui est supporté dans `isBusesLayoutSupported`.
-* Pas d'accès à l'éditeur depuis le processeur.
+* `setLatencySamples` called as soon as the latency changes, and latency kept constant as much as possible.
+* `getTailLengthSeconds` filled in for effects with a tail (reverb, delay).
+* Bus layouts: declare precisely what is supported in `isBusesLayoutSupported`.
+* No access to the editor from the processor.
 
-## Mise à jour de JUCE
+## Updating JUCE
 
-* Jamais dans une tâche de fonctionnalité. Tâche dédiée, ADR, réapplication des patchs de `patches/`, CI complète.
+* Never in a feature task. Dedicated task, ADR, reapplication of the patches in `patches/`, full CI.

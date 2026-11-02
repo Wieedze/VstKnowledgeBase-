@@ -1,76 +1,76 @@
-# MoodzFilter : SPEC v1
+# MoodzFilter: SPEC v1
 
-**Date** : 2026-11-02
-**Statut** : figée (phase 0). Toute modification passe par `/grill-with-docs`, puis un ADR, puis cette SPEC amendée.
+**Date**: 2026-11-02
+**Status**: frozen (phase 0). Any change goes through `/grill-with-docs`, then an ADR, then this SPEC amended.
 
-## En une phrase
+## In one sentence
 
-Un filtre multi-modèles avec drive et LFO synchronisé au tempo, en VST3 pour Windows, fait pour les productions de Maxime dans Ableton Live.
+A multi-model filter with drive and a tempo-synced LFO, as a VST3 for Windows, made for Maxime's productions in Ableton Live.
 
-## Cadre
+## Frame
 
-| Décision | Choix | Trace |
+| Decision | Choice | Record |
 | --- | --- | --- |
-| Format | VST3 uniquement | ADR 0003 du playbook |
-| Plateforme | Windows uniquement | ADR 0002 MoodzFilter |
-| Hôte de référence | Ableton Live (VST3, Windows) | |
-| Licence | Open source AGPL v3 | ADR 0001 MoodzFilter |
-| Public | Productions personnelles | |
-| Type | Effet stéréo (entrée et sortie stéréo, mono accepté) | |
-| Stéréo | Lié : le même filtre et la même modulation sur les deux canaux | |
-| Interface | Éditeur générique de JUCE | |
+| Format | VST3 only | Playbook ADR 0003 |
+| Platform | Windows only | MoodzFilter ADR 0002 |
+| Reference host | Ableton Live (VST3, Windows) | |
+| Licence | Open source AGPL v3 | MoodzFilter ADR 0001 |
+| Audience | Personal productions | |
+| Type | Stereo effect (stereo input and output, mono accepted) | |
+| Stereo | Linked: the same filter and the same modulation on both channels | |
+| Interface | JUCE generic editor | |
 
-## Chaîne du signal
+## Signal chain
 
 ```
-entrée → gain in → drive (oversamplé) → filtre (modèle choisi) → mix dry/wet → gain out → sortie
+input → gain in → drive (oversampled) → filter (chosen model) → dry/wet mix → gain out → output
                                   ↑
-                         LFO synchronisé (cutoff)
+                         synced LFO (cutoff)
 ```
 
-L'oversampling entoure le drive et le filtre, seuls étages non linéaires. Le chemin dry est retardé de la latence de l'oversampling pour que le mix ne crée pas de filtrage en peigne.
+Oversampling surrounds the drive and the filter, the only non-linear stages. The dry path is delayed by the oversampling latency so that the mix does not create comb filtering.
 
-## Paramètres v1
+## v1 parameters
 
-| Paramètre | Plage | Défaut | Note |
+| Parameter | Range | Default | Note |
 | --- | --- | --- | --- |
-| Modèle | 4 modèles (voir ci dessous) | Modèle 1 | Liste figée à la phase 2, ajouts en fin de liste uniquement |
-| Mode | Passe-bas, passe-haut, passe-bande, notch (selon le modèle) | Passe-bas | |
-| Cutoff | 20 Hz à 20 kHz, échelle logarithmique | 1 kHz | Lissé |
-| Résonance | 0 à 100 % | 20 % | Lissée |
-| Drive | 0 à 24 dB | 0 dB | Lissé |
-| LFO forme | Sinus, triangle, dent de scie, carré | Sinus | |
-| LFO vitesse | Valeurs synchronisées au BPM de l'hôte, de 4 mesures à 1/32, avec triolets et pointées | 1/4 | |
-| LFO profondeur | 0 à ±4 octaves sur le cutoff | 0 | Lissée |
-| Oversampling | Désactivé, 2x, 4x | 2x | Latence fixe pour un réglage donné, rapportée à l'hôte |
-| Mix | 0 à 100 % | 100 % | Lissé |
-| Gain in | −24 à +24 dB | 0 dB | Lissé |
-| Gain out | −24 à +24 dB | 0 dB | Lissé |
+| Model | 4 models (see below) | Model 1 | List frozen at phase 2, additions at the end of the list only |
+| Mode | Low-pass, high-pass, band-pass, notch (depending on the model) | Low-pass | |
+| Cutoff | 20 Hz to 20 kHz, logarithmic scale | 1 kHz | Smoothed |
+| Resonance | 0 to 100 % | 20 % | Smoothed |
+| Drive | 0 to 24 dB | 0 dB | Smoothed |
+| LFO shape | Sine, triangle, sawtooth, square | Sine | |
+| LFO rate | Values synced to the host BPM, from 4 bars to 1/32, with triplets and dotted values | 1/4 | |
+| LFO depth | 0 to ±4 octaves on the cutoff | 0 | Smoothed |
+| Oversampling | Off, 2x, 4x | 2x | Fixed latency for a given setting, reported to the host |
+| Mix | 0 to 100 % | 100 % | Smoothed |
+| Gain in | −24 to +24 dB | 0 dB | Smoothed |
+| Gain out | −24 to +24 dB | 0 dB | Smoothed |
 
-## Modèles de filtre
+## Filter models
 
-Quatre modèles en v1, choisis à l'écoute pendant la phase 2 parmi ceux de [sst-filters](https://github.com/surge-synthesizer/sst-filters) (GPL v3, compatible AGPL) et le filtre ZDF d'[OB-Xf](https://github.com/surge-synthesizer/OB-Xf). Cible : un multimode propre, un ladder, un modèle façon OB-X, un diode. Le choix final est tracé par ADR.
+Four models in v1, chosen by listening during phase 2 from those of [sst-filters](https://github.com/surge-synthesizer/sst-filters) (GPL v3, AGPL compatible) and the ZDF filter of [OB-Xf](https://github.com/surge-synthesizer/OB-Xf). Target: a clean multimode, a ladder, an OB-X style model, a diode. The final choice is recorded by ADR.
 
 ## Presets
 
-Quelques presets d'usine et la sauvegarde ou le rechargement des presets de l'utilisateur, avec un module existant (`chowdsp_presets_v2` ou équivalent) plutôt que du code maison. L'état de session est versionné dès la v1.
+A few factory presets and saving or reloading of user presets, with an existing module (`chowdsp_presets_v2` or equivalent) rather than in-house code. The session state is versioned from v1.
 
-## Hors v1
+## Out of v1
 
-Tout ceci est noté dans `FUTURE.md` et n'entre qu'avec une SPEC amendée :
+All of this is noted in `FUTURE.md` and only comes in with an amended SPEC:
 
-1. Suiveur d'enveloppe.
-2. Décalage de phase stéréo du LFO.
-3. Traitement mid/side.
-4. Matrice de modulation, autres destinations que le cutoff.
-5. Interface dessinée, analyseur de spectre.
-6. Suivi des notes MIDI, sidechain.
-7. macOS, Linux, autres formats.
-8. Plus de 4 modèles de filtre.
+1. Envelope follower.
+2. Stereo phase offset of the LFO.
+3. Mid/side processing.
+4. Modulation matrix, destinations other than the cutoff.
+5. Custom-drawn interface, spectrum analyser.
+6. MIDI note tracking, sidechain.
+7. macOS, Linux, other formats.
+8. More than 4 filter models.
 
-## Critères de réussite de la v1
+## v1 success criteria
 
-1. Les 4 modèles sonnent juste dans Ableton Live, validé à l'écoute.
-2. CI verte : tests DSP, RealtimeSanitizer, pluginval strictness 10, rendus de référence.
-3. Aucun clic ni craquement en automatisant le cutoff, le modèle et l'oversampling pendant la lecture.
-4. Une session Ableton sauvée avec la v1 se recharge à l'identique.
+1. The 4 models sound right in Ableton Live, approved by listening.
+2. Green CI: DSP tests, RealtimeSanitizer, pluginval strictness 10, reference renders.
+3. No click or crackle when automating the cutoff, the model and the oversampling during playback.
+4. An Ableton session saved with v1 reloads identically.

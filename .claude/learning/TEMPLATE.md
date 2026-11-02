@@ -1,20 +1,20 @@
-# NNNN — Titre de la tâche
+# NNNN — Task title
 
-**Date** : AAAA-MM-JJ
-**Verdict** : pass (après N tours)
+**Date**: YYYY-MM-DD
+**Verdict**: pass (after N rounds)
 
-## Ce qui a été livré
+## What was delivered
 
-Une ou deux phrases.
+One or two sentences.
 
-## Ce qui a coincé
+## What got stuck
 
-Les échecs du task-verifier, les bugs trouvés, les fausses pistes.
+The task-verifier failures, the bugs found, the false leads.
 
-## Ce qu'on change pour la suite
+## What we change next
 
-Règle modifiée (avec lien vers l'ADR), test ajouté, piège à noter. "Rien" est une réponse valide.
+Modified rule (with link to the ADR), added test, trap to note. "Nothing" is a valid answer.
 
-## Preuves
+## Evidence
 
-Commandes lancées et leur résultat résumé.
+Commands run and a summary of their result.

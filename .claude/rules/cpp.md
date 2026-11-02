@@ -1,13 +1,13 @@
-# Règles C++
+# C++ rules
 
-* C++23 (C++20 minimum). Pas d'extension de compilateur.
-* `clang-format` du repo, appliqué avant commit.
-* Warnings : `-Wall -Wextra` (ou `/W4`) ; aucun warning nouveau toléré.
-* RAII partout. Pas de `new`/`delete` nus ; `std::unique_ptr` hors thread audio.
-* `const` et `noexcept` par défaut sur ce qui tourne sur le thread audio.
-* Passer les buffers en `std::span<float>` (ou `juce::dsp::AudioBlock` dans `plugin/`), jamais en pointeur + taille séparés dans une nouvelle API.
-* Pas de `float` comparé avec `==` dans les tests : tolérance explicite.
-* Une classe = une responsabilité. Les modules profonds (beaucoup de comportement derrière une petite interface) sont préférés aux classes utilitaires éparpillées.
-* Noms tirés de `GLOSSARY.md`. Un terme absent du glossaire y est ajouté dans la même tâche.
-* Pas de macro sauf pour la configuration de build.
-* Commentaires : le pourquoi, et la source d'une formule DSP (papier, page, équation). Pas le quoi.
+* C++23 (C++20 minimum). No compiler extensions.
+* The repo's `clang-format`, applied before commit.
+* Warnings: `-Wall -Wextra` (or `/W4`); no new warning tolerated.
+* RAII everywhere. No bare `new`/`delete`; `std::unique_ptr` off the audio thread.
+* `const` and `noexcept` by default on what runs on the audio thread.
+* Pass buffers as `std::span<float>` (or `juce::dsp::AudioBlock` in `plugin/`), never as separate pointer + size in a new API.
+* No `float` compared with `==` in tests: explicit tolerance.
+* One class = one responsibility. Deep modules (a lot of behavior behind a small interface) are preferred over scattered utility classes.
+* Names taken from `GLOSSARY.md`. A term missing from the glossary is added to it in the same task.
+* No macros except for build configuration.
+* Comments: the why, and the source of a DSP formula (paper, page, equation). Not the what.

@@ -1,89 +1,89 @@
 # Tests
 
-Un agent ne peut pas écouter le plugin. Tout ce qui compte doit donc être vérifiable par une commande qui sort 0 ou non zéro.
+An agent cannot listen to the plugin. So everything that matters must be verifiable by a command that exits with 0 or non-zero.
 
-## Pyramide
+## Pyramid
 
-| Niveau | Outil | Cible | Quand |
+| Level | Tool | Target | When |
 | --- | --- | --- | --- |
-| 1. Unitaire DSP | Catch2, sans JUCE | `dsp/` | Chaque changement, en TDD |
-| 2. Propriétés DSP | Catch2 + générateurs | `dsp/` | Chaque changement |
-| 3. Plugin | Catch2 avec JUCE | `plugin/` : paramètres, état, latence | Chaque changement de `plugin/` |
-| 4. Non régression audio | `tools render` + comparaison | Rendus de référence | Chaque PR |
-| 5. Validation hôte | pluginval strictness 10 | Binaire VST3 | Chaque PR (CI) |
-| 6. Performance | Cible `Benchmarks`, `tools bench` | Coût CPU par bloc | Chaque PR touchant `dsp/` |
-| 7. Écoute | Toi, dans le DAW | Le son | Fin de phase, avant merge des changements sonores |
+| 1. DSP unit | Catch2, without JUCE | `dsp/` | Every change, with TDD |
+| 2. DSP properties | Catch2 + generators | `dsp/` | Every change |
+| 3. Plugin | Catch2 with JUCE | `plugin/`: parameters, state, latency | Every change to `plugin/` |
+| 4. Audio regression | `tools render` + comparison | Reference renders | Every PR |
+| 5. Host validation | pluginval strictness 10 | VST3 binary | Every PR (CI) |
+| 6. Performance | `Benchmarks` target, `tools bench` | CPU cost per block | Every PR touching `dsp/` |
+| 7. Listening | You, in the DAW | The sound | End of phase, before merging sound changes |
 
-## Niveau 1 et 2 : ce qu'on teste sur un bloc DSP
+## Levels 1 and 2: what we test on a DSP block
 
-* Réponse à une impulsion, à un sinus, à un DC : valeurs attendues calculées à part (Python, papier) et citées dans le test.
-* Réponse en fréquence d'un filtre : gain mesuré à quelques fréquences contre la formule, à ± 0,1 dB.
-* `reset()` remet bien l'état à zéro (deux rendus successifs identiques).
-* Aucune NaN/Inf sur un balayage des paramètres aux bornes.
-* Indépendance à la taille de bloc.
-* Indépendance au sample rate quand c'est attendu (44,1 / 48 / 96 kHz).
-* Pas d'allocation ni de lock dans `process` : [RealtimeSanitizer](https://clang.llvm.org/docs/RealtimeSanitizer.html) (clang, `-fsanitize=realtime`, fonctions temps réel marquées `[[clang::nonblocking]]`) dans un job CI dédié. Rien à coder nous mêmes.
+* Response to an impulse, a sine, a DC: expected values computed separately (Python, paper) and cited in the test.
+* Frequency response of a filter: gain measured at a few frequencies against the formula, within ± 0.1 dB.
+* `reset()` really sets the state back to zero (two successive renders are identical).
+* No NaN/Inf over a sweep of the parameters at their bounds.
+* Block size independence.
+* Sample rate independence when expected (44.1 / 48 / 96 kHz).
+* No allocation or lock in `process`: [RealtimeSanitizer](https://clang.llvm.org/docs/RealtimeSanitizer.html) (clang, `-fsanitize=realtime`, real-time functions marked `[[clang::nonblocking]]`) in a dedicated CI job. Nothing to code ourselves.
 
-Dans les tests de `plugin/`, [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) affiche la forme du signal en ASCII quand un test échoue. Il dépend de `juce_dsp` : pas dans les tests DSP sans JUCE.
+In the `plugin/` tests, [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) shows the signal shape as ASCII when a test fails. It depends on `juce_dsp`: not in the DSP tests without JUCE.
 
-Le test d'indépendance à la taille de bloc doit **activer la modulation** (LFO routés) : c'est le cas que Drum Foundry rate.
+The block size independence test must **enable modulation** (LFOs routed): that is the case Drum Foundry misses.
 
-## Niveau 3 : plugin
+## Level 3: plugin
 
-* Round trip d'état.
-* Chargement d'états des versions précédentes (fichiers gardés dans `tests/plugin/states/`).
-* Latence rapportée = latence mesurée (impulsion en entrée, position du pic en sortie).
-* Bus layouts supportés et refusés.
-* IDs de paramètres : un test fige la liste des IDs. Un ID supprimé ou renommé fait échouer le test.
+* State round trip.
+* Loading states from previous versions (files kept in `tests/plugin/states/`).
+* Reported latency = measured latency (impulse in, position of the peak out).
+* Supported and rejected bus layouts.
+* Parameter IDs: a test freezes the list of IDs. A removed or renamed ID makes the test fail.
 
-## Niveau 4 : non régression audio
+## Level 4: audio regression
 
-Comme `DrumFoundryTools render` :
+Like `DrumFoundryTools render`:
 
-1. `tools render --preset all --out build/renders` produit un WAV par preset et par signal de test (impulsion, sweep, bruit rose, boucle de batterie courte).
-2. `tools compare build/renders tests/golden` compare à la référence : erreur max, RMS de la différence, avec une tolérance déclarée par fichier dans `tests/golden/manifest.json`.
-3. Changer une référence est un acte explicite : commit séparé, message `golden: <raison>`, et une phrase dans le post mortem.
+1. `tools render --preset all --out build/renders` produces one WAV per preset and per test signal (impulse, sweep, pink noise, short drum loop).
+2. `tools compare build/renders tests/golden` compares against the reference: max error, RMS of the difference, with a tolerance declared per file in `tests/golden/manifest.json`.
+3. Changing a reference is an explicit act: a separate commit, message `golden: <reason>`, and one sentence in the post-mortem.
 
-## Niveau 5 : pluginval
+## Level 5: pluginval
 
 ```
 pluginval --strictness-level 10 --validate build/<Plugin>_artefacts/Release/VST3/<Plugin>.vst3
 ```
 
-En CI via Pamplejuce. En local avant toute PR qui touche `plugin/`.
+In CI via Pamplejuce. Locally before any PR that touches `plugin/`.
 
-## Le binaire `tools`
+## The `tools` binary
 
-Sous commandes minimales, à construire dès la phase 1 :
+Minimum subcommands, to build from phase 1:
 
-| Commande | Rôle |
+| Command | Role |
 | --- | --- |
-| `render` | Rendus WAV (+ PNG spectrogramme optionnel) avec le vrai moteur |
-| `compare` | Comparaison avec les références |
-| `check` | Batterie rapide : NaN, round trip, taille de bloc, latence |
-| `bench` | Coût CPU par bloc, par configuration |
+| `render` | WAV renders (+ optional spectrogram PNG) with the real engine |
+| `compare` | Comparison with the references |
+| `check` | Fast battery: NaN, round trip, block size, latency |
+| `bench` | CPU cost per block, per configuration |
 
-Option CMake `-D<PLUGIN>_BUILD_TOOLS=ON`, désactivée pour les builds de release.
+CMake option `-D<PLUGIN>_BUILD_TOOLS=ON`, disabled for release builds.
 
-## Vérifier que `dsp/` reste sans JUCE
+## Checking that `dsp/` stays free of JUCE
 
-La cible `dsp` est une bibliothèque CMake sans lien vers JUCE. Si quelqu'un ajoute un `#include <juce_...>`, la compilation de la cible de tests DSP échoue. Ajouter aussi un check grep en CI :
+The `dsp` target is a CMake library with no link to JUCE. If someone adds an `#include <juce_...>`, compiling the DSP test target fails. Also add a grep check in CI:
 
 ```
 ! grep -rn "juce" source/dsp/
 ```
 
-## CI GitHub Actions (à partir de Pamplejuce)
+## GitHub Actions CI (starting from Pamplejuce)
 
-Pamplejuce fournit le build sur 3 OS, Catch2 et pluginval 10 (VST3). Il ne fournit **pas** `tools check`, `tools compare`, clang-format en CI, le budget de benchmarks ni le job RTSan : c'est à nous de les ajouter (étapes dans [`references/pamplejuce.md`](references/pamplejuce.md)). Sans certificats, ses étapes de signature font échouer la CI : les conditionner à la présence des secrets.
+Pamplejuce provides the build on 3 OSes, Catch2 and pluginval 10 (VST3). It does **not** provide `tools check`, `tools compare`, clang-format in CI, the benchmark budget or the RTSan job: we have to add them (steps in [`references/pamplejuce.md`](references/pamplejuce.md)). Without certificates, its signing steps make CI fail: make them conditional on the presence of the secrets.
 
-Sur chaque PR, Linux + Windows + macOS :
+On every PR, Linux + Windows + macOS:
 
-1. Configure et build (Release).
-2. `ctest` (niveaux 1 à 3).
-3. `tools check` et `tools compare` (niveau 4).
-4. pluginval strictness 10 (niveau 5).
-5. Benchmarks, avec alerte si un bloc dépasse le budget fixé dans `benchmarks/budget.json`.
-6. clang-format en mode vérification.
+1. Configure and build (Release).
+2. `ctest` (levels 1 to 3).
+3. `tools check` and `tools compare` (level 4).
+4. pluginval strictness 10 (level 5).
+5. Benchmarks, with an alert if a block exceeds the budget set in `benchmarks/budget.json`.
+6. clang-format in check mode.
 
-Une PR rouge ne se merge pas, y compris quand c'est un agent qui l'a ouverte.
+A red PR is not merged, including when an agent opened it.

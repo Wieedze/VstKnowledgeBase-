@@ -1,9 +1,9 @@
-# Règles UI
+# UI rules
 
-* L'éditeur ne contient pas de logique audio. Il lit et écrit les paramètres via les attachments APVTS.
-* Les données de visualisation (analyseur, mètres, scope) arrivent par une FIFO lock free alimentée par le thread audio ; l'UI la lit sur un timer.
-* L'éditeur peut être détruit et recréé à tout moment par l'hôte : aucun état important ne vit seulement dans l'UI.
-* Taille redimensionnable, mise à l'échelle testée à 100 %, 150 %, 200 %.
-* Polices embarquées, licences incluses.
-* Le look est décrit dans un document de design (couleurs, tailles, composants) avant d'être codé.
-* `tools snapshot` produit des captures pour la revue ; un agent ne déclare pas l'UI finie sans capture.
+* The editor contains no audio logic. It reads and writes parameters through the APVTS attachments.
+* Visualization data (analyzer, meters, scope) arrives through a lock-free FIFO fed by the audio thread; the UI reads it on a timer.
+* The editor can be destroyed and recreated at any time by the host: no important state lives only in the UI.
+* Resizable size, scaling tested at 100 %, 150 %, 200 %.
+* Embedded fonts, licenses included.
+* The look is described in a design document (colors, sizes, components) before being coded.
+* `tools snapshot` produces screenshots for review; an agent does not declare the UI finished without a screenshot.

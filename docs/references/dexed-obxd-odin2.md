@@ -1,278 +1,278 @@
-# Dexed, OB-Xd (OB-Xf) et Odin 2
+# Dexed, OB-Xd (OB-Xf) and Odin 2
 
-Étude faite le 2026-11-02 sur des clones superficiels (`--depth 1`, sans sous modules) dans `/home/claude/study/`. Les chemins `fichier:ligne` sont relatifs à la racine de chaque dépôt et valent pour le commit indiqué. Contexte : playbook VST3 uniquement, C++23, JUCE 9, CMake ; licence de nos plugins pas encore décidée (voir `docs/07_A_REPRENDRE.md`, "La question qui décide de tout").
+Study done on 2026-11-02 on shallow clones (`--depth 1`, without submodules) in `/home/claude/study/`. The `file:line` paths are relative to the root of each repository and are valid for the commit given. Context: VST3 only playbook, C++23, JUCE 9, CMake; the licence of our plugins is not decided yet (see `docs/07_REUSE.md`, "The question that decides everything").
 
-| Projet | Commit étudié | Lien |
+| Project | Commit studied | Link |
 | --- | --- | --- |
 | Dexed | `fea2f0f` | [asb2m10/dexed@fea2f0f](https://github.com/asb2m10/dexed/tree/fea2f0f0f2c397799f59b27eb11c038cd34b22c5) |
-| OB-Xd (discoDSP) | `0c7c737` (README seul) ; dernier source `f1fcdd5` | [reales/OB-Xd@f1fcdd5](https://github.com/reales/OB-Xd/tree/f1fcdd51eabcb7855cdd90818611cd7e357c359c) |
-| OB-Xf (fork Surge Synth Team) | `102bb38` | [surge-synthesizer/OB-Xf@102bb38](https://github.com/surge-synthesizer/OB-Xf/tree/102bb389eeea25f868c656e07aaed1c135087cb7) |
+| OB-Xd (discoDSP) | `0c7c737` (README only); last source `f1fcdd5` | [reales/OB-Xd@f1fcdd5](https://github.com/reales/OB-Xd/tree/f1fcdd51eabcb7855cdd90818611cd7e357c359c) |
+| OB-Xf (Surge Synth Team fork) | `102bb38` | [surge-synthesizer/OB-Xf@102bb38](https://github.com/surge-synthesizer/OB-Xf/tree/102bb389eeea25f868c656e07aaed1c135087cb7) |
 | Odin 2 | `265e9e2` | [TheWaveWarden/odin2@265e9e2](https://github.com/TheWaveWarden/odin2/tree/265e9e227581357efb87ed7217381f8a40c5e2bf) |
 
-## Récapitulatif
+## Summary
 
-| Projet | Licence | Moteur sans JUCE | Build | Tests | Dernier commit | Verdict |
+| Project | Licence | Engine without JUCE | Build | Tests | Last commit | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dexed | GPL v3 ; dossier `source/msfa/` en **Apache 2.0** (sauf `tuning.*`, sans en tête) | Presque : `msfa/` est du C++ standard, à trois couplages près (logger, MTS-ESP, `tuning.cc` qui inclut JUCE) | CMake (un `Dexed.jucer` subsiste), JUCE 8.0.11 | Aucun | 2026-10-14 | **Le meilleur gain de l'étude** : le moteur FM DX7 `msfa` est Apache 2.0, donc utilisable avec un plugin fermé **et** avec un plugin AGPL. Lecture des SysEx DX7 en GPL : à réécrire ou à prendre seulement si AGPL |
-| OB-Xd | GPL v3 (source 2.10 seulement) ; images CC BY-SA 2.0 | Non (en têtes `Engine/` liés à JUCE) | Projucer, JUCE 7 | Aucun | 2026-08-18 (README) ; source retiré le 2026-02-18 | **Ne pas étudier** : le source a été supprimé de `HEAD`, le produit est devenu binaire seul. Prendre OB-Xf |
-| OB-Xf | GPL v3 ou ultérieure, tous fichiers | Presque : moteur en en têtes, JUCE utilisé pour `Random`, `jlimit`, `String`, `FastMathApproximations` ; SIMD via simde et sst-basic-blocks (GPL) | CMake, JUCE 8.0.12 (commit `develop` épinglé), C++20 | 131 `TEST_CASE` Catch2, dont des rendus de référence ; lancés en CI Linux | 2026-11-01 | **Fork le plus actif, meilleure ingénierie des trois.** Filtre OB-X/Xpander ZDF, oscillateurs BLEP, décimateur, ADSR réutilisables **seulement si AGPL**. Excellente source d'idées sinon |
-| Odin 2 | GPL v3 ; police Aldrich en OFL 1.1 | Non : tout `Source/audio/` inclut `JuceHeader.h` via `GlobalIncludes.h` | CMake, JUCE 6.1.6 | Aucun | 2025-05-30 | **Catalogue d'idées, pas de code à extraire** : beaucoup de filtres et d'effets, mais JUCE 6, couplage fort, allocations sur le thread audio, plus de commit depuis 17 mois |
+| Dexed | GPL v3; `source/msfa/` folder under **Apache 2.0** (except `tuning.*`, without a header) | Almost: `msfa/` is standard C++, apart from three couplings (logger, MTS-ESP, `tuning.cc` which includes JUCE) | CMake (a `Dexed.jucer` remains), JUCE 8.0.11 | None | 2026-10-14 | **The best gain of the study**: the DX7 FM engine `msfa` is Apache 2.0, so usable with a closed plugin **and** with an AGPL plugin. DX7 SysEx reading under GPL: rewrite it, or take it only if AGPL |
+| OB-Xd | GPL v3 (source 2.10 only); images CC BY-SA 2.0 | No (`Engine/` headers tied to JUCE) | Projucer, JUCE 7 | None | 2026-08-18 (README); source removed on 2026-02-18 | **Do not study**: the source was removed from `HEAD`, the product became binary only. Take OB-Xf |
+| OB-Xf | GPL v3 or later, all files | Almost: header based engine, JUCE used for `Random`, `jlimit`, `String`, `FastMathApproximations`; SIMD through simde and sst-basic-blocks (GPL) | CMake, JUCE 8.0.12 (pinned `develop` commit), C++20 | 131 Catch2 `TEST_CASE`, including reference renders; run in Linux CI | 2026-11-01 | **Most active fork, best engineering of the three.** OB-X/Xpander ZDF filter, BLEP oscillators, decimator, ADSR reusable **only if AGPL**. Otherwise an excellent source of ideas |
+| Odin 2 | GPL v3; Aldrich font under OFL 1.1 | No: all of `Source/audio/` includes `JuceHeader.h` through `GlobalIncludes.h` | CMake, JUCE 6.1.6 | None | 2025-05-30 | **A catalogue of ideas, no code to extract**: many filters and effects, but JUCE 6, strong coupling, allocations on the audio thread, no commit for 17 months |
 
-Règle de lecture : "si AGPL" veut dire que la ligne n'est utilisable que si l'ADR 0001 du plugin choisit l'AGPL v3. L'Apache 2.0 est compatible avec la GPL v3 et l'AGPL v3 (dans ce sens seulement) et avec un plugin fermé, à condition de garder les en têtes, le texte de la licence, un éventuel `NOTICE`, et de signaler les fichiers modifiés.
+Reading rule: "if AGPL" means the row is usable only if the plugin's ADR 0001 chooses AGPL v3. Apache 2.0 is compatible with GPL v3 and AGPL v3 (in that direction only) and with a closed plugin, provided the headers, the licence text and any `NOTICE` are kept, and modified files are flagged.
 
 ## 1. Dexed
 
-**Verdict : on reprend le moteur `msfa` (Apache 2.0) tel quel dans `dsp/`, après avoir coupé trois dépendances ; le reste de Dexed (processeur, cartouches SysEx, filtre, UI) est GPL v3 et sert d'exemple ou d'idée, sauf si le plugin est AGPL.**
+**Verdict: we take the `msfa` engine (Apache 2.0) as is into `dsp/`, after cutting three dependencies; the rest of Dexed (processor, SysEx cartridges, filter, UI) is GPL v3 and serves as an example or an idea, unless the plugin is AGPL.**
 
 ### 1.1 Licences
 
-| Dossier ou fichier | Licence lue dans le fichier | Remarque |
+| Folder or file | Licence read in the file | Remark |
 | --- | --- | --- |
-| [`LICENSE`](https://github.com/asb2m10/dexed/blob/fea2f0f0f2c397799f59b27eb11c038cd34b22c5/LICENSE) | GPL v3 | Licence par défaut du dépôt |
+| [`LICENSE`](https://github.com/asb2m10/dexed/blob/fea2f0f0f2c397799f59b27eb11c038cd34b22c5/LICENSE) | GPL v3 | Default licence of the repository |
 | `README.md:16-17` | | "The msfa component [...] stays on the Apache 2.0 license to be able to collaborate between projects" |
-| `source/msfa/*.h`, `*.cc`, `porta.cpp` (24 fichiers) | **Apache 2.0** (en tête de chaque fichier), Copyright Google 2012-2013, Pascal Gauthier 2016-2025, Jean Pierre Cimalando 2019 | Les modifications récentes de Pascal Gauthier gardent l'en tête Apache, par exemple `source/msfa/dx7note.cc:1-15` |
-| `source/msfa/tuning.h`, `tuning.cc` | **aucun en tête**, donc GPL v3 du dépôt | `tuning.cc:11` inclut `juce_gui_basics` |
+| `source/msfa/*.h`, `*.cc`, `porta.cpp` (24 files) | **Apache 2.0** (header of each file), Copyright Google 2012-2013, Pascal Gauthier 2016-2025, Jean Pierre Cimalando 2019 | Pascal Gauthier's recent changes keep the Apache header, for example `source/msfa/dx7note.cc:1-15` |
+| `source/msfa/tuning.h`, `tuning.cc` | **no header**, so the repository's GPL v3 | `tuning.cc:11` includes `juce_gui_basics` |
 | `source/engine/EngineMkI.h` | Apache 2.0 | |
-| `source/engine/EngineMkI.cpp`, `EngineOpl.h`, `EngineOpl.cpp` | GPL v3 ou ultérieure | `EngineOpl.cpp:22` cite "carbon14 and opl3" |
-| `source/PluginFx.h`, `PluginFx.cpp` | GPL v3 ou ultérieure | `PluginFx.cpp:6-7` : "Filter taken from the Obxd project" |
-| `source/core/`, `parameter/`, `midi/`, `ui/`, `util/` | pas d'en tête, donc GPL v3 | |
-| Sous modules (non clonés) : `tuning-library` (Surge), `MTS-ESP`, `surgesynthteam_tuningui`, `clap-juce-extensions`, `JUCE` | *à vérifier* dans chaque sous module | tuning-library est annoncée MIT par Surge ; MTS-ESP à vérifier |
+| `source/engine/EngineMkI.cpp`, `EngineOpl.h`, `EngineOpl.cpp` | GPL v3 or later | `EngineOpl.cpp:22` cites "carbon14 and opl3" |
+| `source/PluginFx.h`, `PluginFx.cpp` | GPL v3 or later | `PluginFx.cpp:6-7`: "Filter taken from the Obxd project" |
+| `source/core/`, `parameter/`, `midi/`, `ui/`, `util/` | no header, so GPL v3 | |
+| Submodules (not cloned): `tuning-library` (Surge), `MTS-ESP`, `surgesynthteam_tuningui`, `clap-juce-extensions`, `JUCE` | *to verify* in each submodule | tuning-library is announced as MIT by Surge; MTS-ESP to verify |
 
 ### 1.2 Architecture
 
-| Élément | Ce que fait Dexed | Où |
+| Item | What Dexed does | Where |
 | --- | --- | --- |
-| Séparation moteur / JUCE | `msfa/` n'inclut pas JUCE, sauf `tuning.cc`. Mais `controllers.h:21` et `env.cc:23` incluent `../debugger/Logger.h` (GPL, lié à JUCE), et `dx7note.h:32` inclut `libMTSClient.h` | `source/msfa/` |
-| Voix | 16 voix fixes (`MAX_ACTIVE_NOTES`), un `Dx7Note*` par voix | `source/PluginProcessor.h:76-77` |
-| Opérateurs et algorithmes | 6 opérateurs, table des 32 algorithmes du DX7 | `source/msfa/fm_core.cc:29`, rendu `fm_core.cc:93` |
-| Calcul d'une note | `Dx7Note::init` à partir des 156 octets du patch, `Dx7Note::compute` par paquet | `source/msfa/dx7note.cc:163`, `:222` |
-| Arithmétique | Entiers 32 bits, tables de sinus et d'exponentielle, émulation fidèle des pas d'enveloppe et du LFO du DX7 | `msfa/sin.*`, `exp2.*`, `env.*`, `lfo.*`, `pitchenv.*` |
-| Paquets fixes | Le moteur travaille par paquets de `N = 64` échantillons (`LG_N = 6`) ; le surplus d'un paquet est gardé dans `extra_buf` pour le bloc suivant | `source/msfa/synth.h:29-30`, `source/PluginProcessor.cpp:228-268` |
-| Anti aliasing | Aucun, volontairement : c'est le caractère du DX7 | |
-| Trois moteurs | "Modern" (msfa), "Mark I" (`EngineMkI`), "OPL" (`EngineOpl`), choisis par pointeur `controllers.core` | `source/PluginProcessor.cpp:478-493` |
-| Filtre de sortie | Filtre 4 pôles d'OB-Xd porté (GPL) | `source/PluginFx.cpp:159` |
-| Sortie | Mono, copiée sur le canal droit | `source/PluginProcessor.cpp:291-293` |
-| Commandes UI vers audio | `CommandFifo` : commandes type erased construites sur le thread UI, exécutées par le thread audio via `AbstractFifo` | `source/util/CommandFifo.h`, appel `PluginProcessor.cpp:198` |
+| Engine / JUCE separation | `msfa/` does not include JUCE, except `tuning.cc`. But `controllers.h:21` and `env.cc:23` include `../debugger/Logger.h` (GPL, tied to JUCE), and `dx7note.h:32` includes `libMTSClient.h` | `source/msfa/` |
+| Voices | 16 fixed voices (`MAX_ACTIVE_NOTES`), one `Dx7Note*` per voice | `source/PluginProcessor.h:76-77` |
+| Operators and algorithms | 6 operators, table of the DX7's 32 algorithms | `source/msfa/fm_core.cc:29`, rendering `fm_core.cc:93` |
+| Computing a note | `Dx7Note::init` from the patch's 156 bytes, `Dx7Note::compute` per chunk | `source/msfa/dx7note.cc:163`, `:222` |
+| Arithmetic | 32-bit integers, sine and exponential tables, faithful emulation of the DX7's envelope steps and LFO | `msfa/sin.*`, `exp2.*`, `env.*`, `lfo.*`, `pitchenv.*` |
+| Fixed chunks | The engine works in chunks of `N = 64` samples (`LG_N = 6`); the remainder of a chunk is kept in `extra_buf` for the next block | `source/msfa/synth.h:29-30`, `source/PluginProcessor.cpp:228-268` |
+| Anti aliasing | None, on purpose: it is the DX7's character | |
+| Three engines | "Modern" (msfa), "Mark I" (`EngineMkI`), "OPL" (`EngineOpl`), chosen through the `controllers.core` pointer | `source/PluginProcessor.cpp:478-493` |
+| Output filter | Ported OB-Xd 4-pole filter (GPL) | `source/PluginFx.cpp:159` |
+| Output | Mono, copied to the right channel | `source/PluginProcessor.cpp:291-293` |
+| UI to audio commands | `CommandFifo`: type erased commands built on the UI thread, executed by the audio thread through `AbstractFifo` | `source/util/CommandFifo.h`, call `PluginProcessor.cpp:198` |
 
-Points contraires à `.claude/rules/realtime-audio.md` et `dsp.md`, à ne pas reproduire :
+Points contrary to `.claude/rules/realtime-audio.md` and `dsp.md`, not to be reproduced:
 
-1. État global : `Freqlut::init`, `Lfo::init`, `Env::init_sr`, `Porta::init_sr` sont statiques et réinitialisés par `prepareToPlay` (`PluginProcessor.cpp:137-141`, `msfa/env.h:52,61`, `msfa/lfo.h:21,34-35`). Deux instances à des fréquences d'échantillonnage différentes se perturbent. Dans `dsp/`, ces tables deviennent des membres d'un objet `prepare(sampleRate, maxBlockSize)`.
-2. `prepareToPlay` fait `new Dx7Note` pour chaque voix sans libérer l'ancienne (`PluginProcessor.cpp:147`) : fuite si l'hôte rappelle `prepareToPlay` sans `releaseResources`.
-3. `std::vector<MidiMessage> outputMidiMessageQueue` vidé dans `processBlock` (`PluginProcessor.h:233`, `PluginProcessor.cpp:296-300`).
+1. Global state: `Freqlut::init`, `Lfo::init`, `Env::init_sr`, `Porta::init_sr` are static and reinitialised by `prepareToPlay` (`PluginProcessor.cpp:137-141`, `msfa/env.h:52,61`, `msfa/lfo.h:21,34-35`). Two instances at different sample rates disturb each other. In `dsp/`, these tables become members of an object with `prepare(sampleRate, maxBlockSize)`.
+2. `prepareToPlay` does `new Dx7Note` for each voice without freeing the old one (`PluginProcessor.cpp:147`): a leak if the host calls `prepareToPlay` again without `releaseResources`.
+3. `std::vector<MidiMessage> outputMidiMessageQueue` emptied in `processBlock` (`PluginProcessor.h:233`, `PluginProcessor.cpp:296-300`).
 
 ### 1.3 Presets
 
-| Sujet | Détail | Où |
+| Topic | Detail | Where |
 | --- | --- | --- |
-| Format | Cartouches SysEx DX7 de 32 voix : 4104 octets, en tête `F0 43 00 09 20 00`, somme de contrôle, voix empaquetée sur 128 octets, dépaquetée sur 155 | `source/core/Cartridge.h:7-8`, `Cartridge.cpp:30` (`load`), `:137` (`unpackProgram`), `:194` (`packProgram`) |
-| Robustesse | `load` rend 1 si la somme de contrôle est fausse, 2 si aucune donnée SysEx n'est trouvée ; `normparm` borne chaque paramètre | `Cartridge.h:53-58`, `Cartridge.cpp:21` |
-| Documentation du format | `doc/sysex-format.txt`, `doc/TX802-SYSEX.pdf` | `doc/` |
-| Bibliothèque | Cartouches `.syx` dans un dossier utilisateur, cartouches d'usine dans `assets/builtin_pgm.zip` (BinaryData), navigateur `CartManager` | `source/PluginData.cpp:62-80`, `source/ui/window/CartManager.cpp` |
-| État de session | Version écrite (`IDs::version`, `DexedApvts::MODEL_VERSION`), chargeur de l'ancien format 1.0 | `source/parameter/State.cpp:6-57`, `StateLegacy.h` |
-| SysEx en temps réel | Réception et envoi de patchs vers un vrai DX7 | `source/midi/SysexComm.cpp` |
+| Format | 32-voice DX7 SysEx cartridges: 4104 bytes, header `F0 43 00 09 20 00`, checksum, voice packed into 128 bytes, unpacked into 155 | `source/core/Cartridge.h:7-8`, `Cartridge.cpp:30` (`load`), `:137` (`unpackProgram`), `:194` (`packProgram`) |
+| Robustness | `load` returns 1 if the checksum is wrong, 2 if no SysEx data is found; `normparm` clamps each parameter | `Cartridge.h:53-58`, `Cartridge.cpp:21` |
+| Format documentation | `doc/sysex-format.txt`, `doc/TX802-SYSEX.pdf` | `doc/` |
+| Library | `.syx` cartridges in a user folder, factory cartridges in `assets/builtin_pgm.zip` (BinaryData), `CartManager` browser | `source/PluginData.cpp:62-80`, `source/ui/window/CartManager.cpp` |
+| Session state | Version written (`IDs::version`, `DexedApvts::MODEL_VERSION`), loader for the old 1.0 format | `source/parameter/State.cpp:6-57`, `StateLegacy.h` |
+| Realtime SysEx | Receiving and sending patches to a real DX7 | `source/midi/SysexComm.cpp` |
 
 ### 1.4 Build, tests, CI
 
-| Sujet | État |
+| Topic | State |
 | --- | --- |
-| Build | CMake 3.16 minimum, JUCE en sous module (`libs/JUCE` épinglé sur le tag **8.0.11**), standard C++ non fixé (C++17 par défaut de JUCE). Formats VST3, AU, Standalone, CLAP |
-| Tests | Aucun |
-| CI | GitHub Actions `project-pipeline.yml` : build et installeurs Linux, Windows, macOS. Ni test, ni pluginval |
-| Dernier commit | 2026-10-14 (`fea2f0f`) ; version 1.1.0 en cours |
+| Build | CMake 3.16 minimum, JUCE as a submodule (`libs/JUCE` pinned on tag **8.0.11**), C++ standard not set (C++17 by JUCE default). Formats VST3, AU, Standalone, CLAP |
+| Tests | None |
+| CI | GitHub Actions `project-pipeline.yml`: build and installers for Linux, Windows, macOS. No tests, no pluginval |
+| Last commit | 2026-10-14 (`fea2f0f`); version 1.1.0 in progress |
 
-### 1.5 Ce qu'on peut extraire
+### 1.5 What we can extract
 
-| Quoi | Licence | Couche chez nous | Effort |
+| What | Licence | Layer on our side | Effort |
 | --- | --- | --- | --- |
-| `source/msfa/` sauf `tuning.*` : `dx7note`, `fm_core`, `fm_op_kernel`, `env`, `pitchenv`, `lfo`, `porta`, `sin`, `exp2`, `freqlut`, `controllers`, `synth.h`, `aligned_buf.h`, `module.h` | Apache 2.0 | `dsp/` | Moyen, environ deux jours : remplacer `Logger.h` par un en tête vide, remplacer `TuningState` par une petite interface à nous, retirer MTS-ESP ou le cacher derrière cette interface, transformer les tables statiques en membres, écrire les tests de non régression (rendus d'un patch connu) avant de toucher au code |
-| `source/engine/EngineMkI.*` (variante "Mark I") | `.h` Apache, `.cpp` GPL v3 | `dsp/` | Faible, mais **si AGPL** seulement à cause du `.cpp` |
-| `source/core/Cartridge.*`, `Program.*` (lecture et écriture SysEx) | GPL v3 | `plugin/` | Faible si AGPL. Sinon, réécrire à partir de `doc/sysex-format.txt` (le format est un fait, pas du code) : environ 200 lignes, en TDD avec de vraies cartouches |
-| `source/util/CommandFifo.h` | GPL v3 | `plugin/` | Idée seulement : `farbot::fifo` ou `AbstractFifo` font la même chose |
-| `source/PluginFx.*` | GPL v3 | `dsp/` | Ne pas prendre : la version maintenue de ce filtre est dans OB-Xf |
+| `source/msfa/` except `tuning.*`: `dx7note`, `fm_core`, `fm_op_kernel`, `env`, `pitchenv`, `lfo`, `porta`, `sin`, `exp2`, `freqlut`, `controllers`, `synth.h`, `aligned_buf.h`, `module.h` | Apache 2.0 | `dsp/` | Medium, about two days: replace `Logger.h` with an empty header, replace `TuningState` with a small interface of our own, remove MTS-ESP or hide it behind that interface, turn the static tables into members, write the non regression tests (renders of a known patch) before touching the code |
+| `source/engine/EngineMkI.*` ("Mark I" variant) | `.h` Apache, `.cpp` GPL v3 | `dsp/` | Low, but **only if AGPL** because of the `.cpp` |
+| `source/core/Cartridge.*`, `Program.*` (SysEx reading and writing) | GPL v3 | `plugin/` | Low if AGPL. Otherwise, rewrite from `doc/sysex-format.txt` (the format is a fact, not code): about 200 lines, with TDD using real cartridges |
+| `source/util/CommandFifo.h` | GPL v3 | `plugin/` | Idea only: `farbot::fifo` or `AbstractFifo` do the same thing |
+| `source/PluginFx.*` | GPL v3 | `dsp/` | Do not take: the maintained version of this filter is in OB-Xf |
 
-## 2. OB-Xd et OB-Xf
+## 2. OB-Xd and OB-Xf
 
-**Verdict : l'OB-Xd de discoDSP n'est plus open source (source supprimé de `HEAD` le 2026-02-18, dernière version publiée en source : 2.10 de 2022). Le fork OB-Xf de la Surge Synth Team est le seul vivant et le mieux outillé des trois projets, mais il est GPL v3 ou ultérieure de bout en bout : son code n'est réutilisable que si le plugin est AGPL.**
+**Verdict: discoDSP's OB-Xd is no longer open source (source removed from `HEAD` on 2026-02-18, last version published as source: 2.10 from 2022). The Surge Synth Team's OB-Xf fork is the only living one and the best tooled of the three projects, but it is GPL v3 or later from end to end: its code is reusable only if the plugin is AGPL.**
 
 ### 2.1 OB-Xd (reales/OB-Xd)
 
-| Sujet | État |
+| Topic | State |
 | --- | --- |
-| Historique | 7 commits. `f1fcdd5` (2022-12-19) "2.10 release" ; `73cea60` (2026-02-18) "Clean up" supprime tout le source ; depuis, seul `README.md` change |
-| Licence | `LICENSE` GPL v3 dans `f1fcdd5`. Le README actuel : "Versions up to 2.11 are available under GPL v3", images de `Source/Images` en CC BY-SA 2.0, autres ressources "All rights reserved" |
-| Build | Projucer (`OB-Xd.jucer`), README : JUCE 7.0.3 ; contient des fichiers JUCE patchés dans `Modules/` |
-| Moteur | `Source/Engine/*.h` (`SynthEngine`, `Motherboard`, `ObxdVoice`, `Filter`, `BlepData`, `Decimator`), 8 voix |
+| History | 7 commits. `f1fcdd5` (2022-12-19) "2.10 release"; `73cea60` (2026-02-18) "Clean up" removes all the source; since then, only `README.md` changes |
+| Licence | `LICENSE` GPL v3 in `f1fcdd5`. The current README: "Versions up to 2.11 are available under GPL v3", images in `Source/Images` under CC BY-SA 2.0, other resources "All rights reserved" |
+| Build | Projucer (`OB-Xd.jucer`), README: JUCE 7.0.3; contains patched JUCE files in `Modules/` |
+| Engine | `Source/Engine/*.h` (`SynthEngine`, `Motherboard`, `ObxdVoice`, `Filter`, `BlepData`, `Decimator`), 8 voices |
 
-On ne l'étudie pas plus : OB-Xf repart de la même base (2.11) avec des années de corrections.
+We do not study it further: OB-Xf starts from the same base (2.11) with years of fixes.
 
-### 2.2 OB-Xf : licences
+### 2.2 OB-Xf: licences
 
-| Dossier | Licence | Où |
+| Folder | Licence | Where |
 | --- | --- | --- |
-| Tout `src/` | GPL v3 ou ultérieure (en tête identique dans chaque fichier, "successor to OB-Xd version 2.11", Copyright 2013-2025 auteurs d'origine et contributeurs) | par exemple `src/engine/Filter.h:1-17` |
-| `LICENSE` | GPL v3 | racine |
-| `assets/` | non précisé, donc GPL v3 du dépôt ; *à vérifier* pour les images et les deux polices `.ttf` | `assets/installer/` |
-| Sous modules (non clonés) | `sst-basic-blocks` (GPL v3 sauf trois fichiers MIT, voir `07_A_REPRENDRE.md`), `sst-cpputils`, `sst-plugininfra`, `simde` (MIT), `fmt` (MIT), `melatonin_inspector`, `MTS-ESP`, `pybind11`, `clap-juce-extensions` | `.gitmodules` |
+| All of `src/` | GPL v3 or later (identical header in each file, "successor to OB-Xd version 2.11", Copyright 2013-2025 original authors and contributors) | for example `src/engine/Filter.h:1-17` |
+| `LICENSE` | GPL v3 | root |
+| `assets/` | not stated, so the repository's GPL v3; *to verify* for the images and the two `.ttf` fonts | `assets/installer/` |
+| Submodules (not cloned) | `sst-basic-blocks` (GPL v3 except three MIT files, see `07_REUSE.md`), `sst-cpputils`, `sst-plugininfra`, `simde` (MIT), `fmt` (MIT), `melatonin_inspector`, `MTS-ESP`, `pybind11`, `clap-juce-extensions` | `.gitmodules` |
 
-### 2.3 OB-Xf : architecture
+### 2.3 OB-Xf: architecture
 
-| Élément | Ce que fait OB-Xf | Où |
+| Item | What OB-Xf does | Where |
 | --- | --- | --- |
-| Séparation moteur / JUCE | Moteur entièrement en en têtes dans `src/engine/`. JUCE y reste pour peu de choses : `juce::Random` (`Lfo.h:52`, `Voice.h:200-204`), `jlimit` (`OscillatorBlock.h:185`), `FastMathApproximations::sin` (`Lfo.h:206`), `juce::String` (`Program.h:78`, `MidiMap.h`), constantes (`core/Constants.h:82-87`) | `src/engine/` |
-| Voix | 32 voix (`MAX_VOICES`), unisson jusqu'à 8 (`MAX_PANNINGS`), file de voix et vol de voix par ancienneté | `src/configuration.h:26,31`, `src/engine/VoiceQueue.h:25`, `src/engine/Motherboard.h:555` |
-| SIMD | Quatre voix par registre (`OscillatorQuad`, `AdsrEnvelopeQuad`, `VoiceControlQuad`, `VoiceFinishQuad`) via simde et `sst/basic-blocks/simd/setup.h` | `src/engine/SimdMath.h:25-30`, `src/engine/VoiceFinishQuad.h:42` |
-| Oscillateurs | Dent de scie, pulse, triangle, bruit blanc, rose, rouge ; anti aliasing par **BLEP** tabulé (16 échantillons, 64 phases, table transposée pour lecture séquentielle) | `src/engine/BlepData.h:22-30`, `SawOsc.h:45,107`, `Noise.h:101-118` |
-| Suréchantillonnage | Mode HQ optionnel ×2, décimation par `Decimator17` (17 coefficients) | `src/engine/Motherboard.h:737-758,769`, `Decimator.h:25` |
-| Filtre | 2 pôles multimode (LP, BP mélangé, HP, "push") et 4 pôles avec 15 modes Xpander par mélange des sorties de pôles. Rétroaction résolue sans retard (ZDF/TPT), non linéarité de paire de diodes approchée par Taylor, saturation `atan` dans le premier pôle | `src/engine/Filter.h:117-216` |
-| Enveloppes | ADSR avec courbe d'attaque réglable, version scalaire et version SIMD | `src/engine/AdsrEnvelope.h:22`, `AdsrEnvelopeQuad.h` |
-| Modulation | LFO global et vibrato synchronisables au tempo, matrice de 8 lignes (sources MPE : strike, lift, press, slide, glide), sources sérialisées par nom et non par entier | `src/configuration.h:39`, `src/engine/VoiceMatrix.h:79-120`, `src/engine/Lfo.h` |
-| "Slop" analogique | Dérive aléatoire par voix (niveau, enveloppes, coupure, portamento) | `src/engine/Voice.h:200-204` |
-| MIDI | Découpage du bloc à chaque événement MIDI (rendu précis à l'échantillon) | `src/ObxfProcessor.cpp:176-195` |
-| Paramètres | Méta données `sst::basic_blocks::params::ParamMetaData`, FIFO de changements de paramètres, attachments maison | `src/parameter/` |
+| Engine / JUCE separation | Engine entirely in headers in `src/engine/`. JUCE remains there for a few things: `juce::Random` (`Lfo.h:52`, `Voice.h:200-204`), `jlimit` (`OscillatorBlock.h:185`), `FastMathApproximations::sin` (`Lfo.h:206`), `juce::String` (`Program.h:78`, `MidiMap.h`), constants (`core/Constants.h:82-87`) | `src/engine/` |
+| Voices | 32 voices (`MAX_VOICES`), unison up to 8 (`MAX_PANNINGS`), voice queue and voice stealing by age | `src/configuration.h:26,31`, `src/engine/VoiceQueue.h:25`, `src/engine/Motherboard.h:555` |
+| SIMD | Four voices per register (`OscillatorQuad`, `AdsrEnvelopeQuad`, `VoiceControlQuad`, `VoiceFinishQuad`) through simde and `sst/basic-blocks/simd/setup.h` | `src/engine/SimdMath.h:25-30`, `src/engine/VoiceFinishQuad.h:42` |
+| Oscillators | Saw, pulse, triangle, white, pink and red noise; anti aliasing with a tabulated **BLEP** (16 samples, 64 phases, table transposed for sequential reading) | `src/engine/BlepData.h:22-30`, `SawOsc.h:45,107`, `Noise.h:101-118` |
+| Oversampling | Optional ×2 HQ mode, decimation by `Decimator17` (17 coefficients) | `src/engine/Motherboard.h:737-758,769`, `Decimator.h:25` |
+| Filter | 2-pole multimode (LP, mixed BP, HP, "push") and 4-pole with 15 Xpander modes by mixing the pole outputs. Feedback solved without delay (ZDF/TPT), diode pair non linearity approximated by Taylor, `atan` saturation in the first pole | `src/engine/Filter.h:117-216` |
+| Envelopes | ADSR with adjustable attack curve, scalar version and SIMD version | `src/engine/AdsrEnvelope.h:22`, `AdsrEnvelopeQuad.h` |
+| Modulation | Global LFO and vibrato syncable to tempo, 8-row matrix (MPE sources: strike, lift, press, slide, glide), sources serialised by name and not by integer | `src/configuration.h:39`, `src/engine/VoiceMatrix.h:79-120`, `src/engine/Lfo.h` |
+| Analogue "slop" | Random per voice drift (level, envelopes, cutoff, portamento) | `src/engine/Voice.h:200-204` |
+| MIDI | Block split at each MIDI event (sample accurate rendering) | `src/ObxfProcessor.cpp:176-195` |
+| Parameters | Metadata `sst::basic_blocks::params::ParamMetaData`, FIFO of parameter changes, custom attachments | `src/parameter/` |
 
-Points contraires à nos règles temps réel, à ne pas reproduire :
+Points contrary to our realtime rules, not to be reproduced:
 
-1. `ParameterUpdateHandler::updateParameters` est appelée en tête de `processBlock` (`src/ObxfProcessor.cpp:89`) et prend un `std::mutex` puis cherche dans un `std::unordered_map<juce::String, ...>` à partir d'un `char*`, ce qui construit une `juce::String` (allocation) sur le thread audio : `src/parameter/ParameterUpdateHandler.cpp:157-159`, `ParameterUpdateHandler.h:112`.
-2. `juce::Random::getSystemRandom()` : générateur global non seedable (`Voice.h:200-204`), contraire à la règle "pas de `rand()`, générateur seedable" de `dsp.md`.
-3. `tan` et `atan` évalués à chaque échantillon dans le filtre (`Filter.h:146,187,198`) : correct mais coûteux ; une table ou une approximation se mesure avec `tools bench`.
+1. `ParameterUpdateHandler::updateParameters` is called at the top of `processBlock` (`src/ObxfProcessor.cpp:89`) and takes a `std::mutex`, then looks up a `std::unordered_map<juce::String, ...>` from a `char*`, which builds a `juce::String` (allocation) on the audio thread: `src/parameter/ParameterUpdateHandler.cpp:157-159`, `ParameterUpdateHandler.h:112`.
+2. `juce::Random::getSystemRandom()`: global non seedable generator (`Voice.h:200-204`), contrary to the `dsp.md` rule "no `rand()`, seedable generator".
+3. `tan` and `atan` evaluated on every sample in the filter (`Filter.h:146,187,198`): correct but expensive; a table or an approximation is measured with `tools bench`.
 
-### 2.4 OB-Xf : presets
+### 2.4 OB-Xf: presets
 
-| Sujet | Détail | Où |
+| Topic | Detail | Where |
 | --- | --- | --- |
-| Format | Un fichier `.fxp` par patch (conteneur VST2 `CcnK`) qui porte du XML : valeurs par ID de paramètre, nom, auteur, licence, catégorie, projet, lignes de matrice | `src/state/StateManager.cpp:61-81,93-107` |
-| Factory | 493 `.fxp` rangés par catégorie (Atmospheres, Basses, Bells...) | `assets/installer/Surge Synth Team/OB-Xf/Patches/` |
-| Import OB-Xd | Banques `.fxb` et patchs `.fxp` d'OB-Xd convertis, avec compensation documentée du décalage d'octave d'OB-Xd | `src/state/ObxdImporter.h:37-72`, `README.md` section "Compatibility with OB-Xd", test `src/tests/obxd_import.cpp` |
-| État de session | XML avec `ob-xf_version`, élément `program` et `dawExtraState` séparés | `src/state/StateManager.cpp:31-49,188-221` |
-| Navigateur | Arbre de patchs, chargement par fichier | `src/Utils.h:244-247` |
+| Format | One `.fxp` file per patch (VST2 `CcnK` container) carrying XML: values by parameter ID, name, author, licence, category, project, matrix rows | `src/state/StateManager.cpp:61-81,93-107` |
+| Factory | 493 `.fxp` sorted by category (Atmospheres, Basses, Bells...) | `assets/installer/Surge Synth Team/OB-Xf/Patches/` |
+| OB-Xd import | OB-Xd `.fxb` banks and `.fxp` patches converted, with documented compensation of OB-Xd's octave offset | `src/state/ObxdImporter.h:37-72`, `README.md` section "Compatibility with OB-Xd", test `src/tests/obxd_import.cpp` |
+| Session state | XML with `ob-xf_version`, separate `program` and `dawExtraState` elements | `src/state/StateManager.cpp:31-49,188-221` |
+| Browser | Patch tree, loading by file | `src/Utils.h:244-247` |
 
-### 2.5 OB-Xf : build, tests, CI
+### 2.5 OB-Xf: build, tests, CI
 
-| Sujet | État |
+| Topic | State |
 | --- | --- |
-| Build | CMake 3.15 minimum, C++20 (`CMakeLists.txt:22`), JUCE en sous module épinglé sur un commit de `develop` du 2026-09-02 qui déclare **8.0.12**. Formats VST3, AU, LV2, CLAP, Standalone, AUv3 (iOS en cours) |
-| Tests | Cible `obxf-tests` (Catch2, JUCE console app), 131 `TEST_CASE` : oscillateurs, filtre (bornes, sortie finie, reset, rendus de référence), enveloppes (bornes, durées), bruit, MPE, accordage, moteur entier, import OB-Xd. Tolérances explicites (`Approx(...).margin(...)`, `src/tests/filt.cpp:289`). Rendus de référence du moteur entier régénérables par variable d'environnement (`src/tests/engine.cpp:20-28`) |
-| CI | GitHub Actions : build Windows (MSVC, clang-cl, ARM64, ARM64EC), macOS, Linux (gcc 12, 13, 14, ARM), tests sur Linux, vérification clang-format. Pas de pluginval |
-| Dernier commit | 2026-11-01 (`102bb38`) |
+| Build | CMake 3.15 minimum, C++20 (`CMakeLists.txt:22`), JUCE as a submodule pinned on a `develop` commit of 2026-09-02 that declares **8.0.12**. Formats VST3, AU, LV2, CLAP, Standalone, AUv3 (iOS in progress) |
+| Tests | `obxf-tests` target (Catch2, JUCE console app), 131 `TEST_CASE`: oscillators, filter (bounds, finite output, reset, reference renders), envelopes (bounds, durations), noise, MPE, tuning, whole engine, OB-Xd import. Explicit tolerances (`Approx(...).margin(...)`, `src/tests/filt.cpp:289`). Whole engine reference renders regenerable through an environment variable (`src/tests/engine.cpp:20-28`) |
+| CI | GitHub Actions: Windows build (MSVC, clang-cl, ARM64, ARM64EC), macOS, Linux (gcc 12, 13, 14, ARM), tests on Linux, clang-format check. No pluginval |
+| Last commit | 2026-11-01 (`102bb38`) |
 
-Remarque sur les tests : les valeurs de référence des filtres sont des sorties de l'implémentation figées. C'est de la non régression, utile, mais cela ne prouve pas la justesse (règle "pas de test qui reproduit l'implémentation" de `testing.md`).
+Note on the tests: the filter reference values are frozen outputs of the implementation. This is non regression testing, useful, but it does not prove correctness (`testing.md` rule "no test that reproduces the implementation").
 
-### 2.6 OB-Xf : ce qu'on peut extraire (si AGPL)
+### 2.6 OB-Xf: what we can extract (if AGPL)
 
-| Quoi | Couche chez nous | Effort |
+| What | Layer on our side | Effort |
 | --- | --- | --- |
-| `src/engine/Filter.h` (2 pôles, 4 pôles, modes Xpander) avec ses tests `src/tests/filt.cpp` | `dsp/` | Faible : en tête autonome, remplacer les constantes JUCE de `core/Constants.h` par `std::numbers` |
-| `src/engine/BlepData.h`, `SawOsc.h`, `PulseOsc.h`, `TriangleOsc.h` avec `src/tests/osc.cpp` | `dsp/` | Faible |
-| `src/engine/Decimator.h` (`Decimator17`, `Decimator9`) | `dsp/` | Très faible ; mais JUCE `dsp::Oversampling` ou HIIR suffisent souvent |
-| `src/engine/AdsrEnvelope.h` avec `src/tests/env.cpp` | `dsp/` | Faible |
-| `src/engine/Noise.h` (blanc, rose, rouge) | `dsp/` | Très faible ; remplacer la source aléatoire par un générateur seedable |
-| `src/engine/DelayLine.h` | `dsp/` | Très faible |
-| Moteur entier (`Motherboard`, `Voice`, `*Quad`) | `dsp/` | Élevé : SIMD lié à sst-basic-blocks et simde, `juce::String` dans `Program`, matrice liée aux ID de paramètres. À n'envisager que pour un clone OB-X complet |
-| `src/state/ObxdImporter.*` | `plugin/` | Moyen ; seulement si on veut lire les banques OB-Xd |
+| `src/engine/Filter.h` (2-pole, 4-pole, Xpander modes) with its tests `src/tests/filt.cpp` | `dsp/` | Low: self contained header, replace the JUCE constants of `core/Constants.h` with `std::numbers` |
+| `src/engine/BlepData.h`, `SawOsc.h`, `PulseOsc.h`, `TriangleOsc.h` with `src/tests/osc.cpp` | `dsp/` | Low |
+| `src/engine/Decimator.h` (`Decimator17`, `Decimator9`) | `dsp/` | Very low; but JUCE `dsp::Oversampling` or HIIR are often enough |
+| `src/engine/AdsrEnvelope.h` with `src/tests/env.cpp` | `dsp/` | Low |
+| `src/engine/Noise.h` (white, pink, red) | `dsp/` | Very low; replace the random source with a seedable generator |
+| `src/engine/DelayLine.h` | `dsp/` | Very low |
+| Whole engine (`Motherboard`, `Voice`, `*Quad`) | `dsp/` | High: SIMD tied to sst-basic-blocks and simde, `juce::String` in `Program`, matrix tied to parameter IDs. Only worth considering for a complete OB-X clone |
+| `src/state/ObxdImporter.*` | `plugin/` | Medium; only if we want to read OB-Xd banks |
 
 ## 3. Odin 2
 
-**Verdict : beaucoup de modules (huit types d'oscillateurs, sept familles de filtres, sept effets), mais tout le DSP dépend de `JuceHeader.h`, le projet est sur JUCE 6.1.6, n'a aucun test et n'a pas reçu de commit depuis le 2025-05-30. On s'en sert comme catalogue d'idées et de références bibliographiques, pas comme source de code.**
+**Verdict: many modules (eight oscillator types, seven filter families, seven effects), but all the DSP depends on `JuceHeader.h`, the project is on JUCE 6.1.6, has no tests and has not received a commit since 2025-05-30. We use it as a catalogue of ideas and bibliographic references, not as a source of code.**
 
 ### 3.1 Licences
 
-| Dossier ou fichier | Licence | Remarque |
+| Folder or file | Licence | Remark |
 | --- | --- | --- |
-| [`LICENSE`](https://github.com/TheWaveWarden/odin2/blob/265e9e227581357efb87ed7217381f8a40c5e2bf/LICENSE) | GPL v3, sauf la police | `LICENSE:1` : la police `assets/font/Aldrich-Regular.ttf` est en SIL OFL 1.1 (`assets/font/OFL.txt`) |
-| `Source/audio/**` | GPL v3 ou ultérieure (en tête TheWaveWarden 2020-2021) | |
+| [`LICENSE`](https://github.com/TheWaveWarden/odin2/blob/265e9e227581357efb87ed7217381f8a40c5e2bf/LICENSE) | GPL v3, except the font | `LICENSE:1`: the font `assets/font/Aldrich-Regular.ttf` is under SIL OFL 1.1 (`assets/font/OFL.txt`) |
+| `Source/audio/**` | GPL v3 or later (TheWaveWarden 2020-2021 header) | |
 | `Source/audio/Filters/LadderFilter.*`, `DiodeFilter.*`, `Korg35Filter.*`, `VAOnePoleFilter.*` | GPL v3 | "based on the diagrams and implementations in Will Pirkle's book *Designing Software Synthesizer Plug-Ins in C++*" (`LadderFilter.h:15-16`) |
-| `Source/audio/FX/ZitaReverb.*` | GPL v3 | Dérivé de zita-rev1 (Fons Adriaensen, GPL) |
-| `Source/audio/FX/SurgeReverb.*` | GPL v3 | Dérivé de la réverbe de Surge (GPL v3) |
-| `Source/audio/FX/FeedbackDelayNetwork.*`, `IntegerDelayLine.*`, `Source/audio/ImpulseResponseCreator.*` | aucun en tête, donc GPL v3 | `FeedbackDelayNetwork.h:9-11` : "currently not used in the synthesizer" |
-| `Source/audio/Oscillators/Wavetables/Coefficients/AKWF_*.h` | marqués GPL v3 | Les formes d'onde AKWF d'origine sont annoncées domaine public (CC0) par leur auteur : *à vérifier* ; si on en veut, les prendre à la source et non chez Odin |
+| `Source/audio/FX/ZitaReverb.*` | GPL v3 | Derived from zita-rev1 (Fons Adriaensen, GPL) |
+| `Source/audio/FX/SurgeReverb.*` | GPL v3 | Derived from Surge's reverb (GPL v3) |
+| `Source/audio/FX/FeedbackDelayNetwork.*`, `IntegerDelayLine.*`, `Source/audio/ImpulseResponseCreator.*` | no header, so GPL v3 | `FeedbackDelayNetwork.h:9-11`: "currently not used in the synthesizer" |
+| `Source/audio/Oscillators/Wavetables/Coefficients/AKWF_*.h` | marked GPL v3 | The original AKWF waveforms are announced as public domain (CC0) by their author: *to verify*; if we want them, take them from the source and not from Odin |
 
 ### 3.2 Architecture
 
-| Élément | Ce que fait Odin 2 | Où |
+| Item | What Odin 2 does | Where |
 | --- | --- | --- |
-| Séparation moteur / JUCE | Aucune : `GlobalIncludes.h:17` inclut `JuceHeader.h` et 26 fichiers de `Source/audio/` utilisent JUCE directement. La matrice de modulation vit dans `Source/gui/ModMatrix.h:181,258` alors que l'audio s'en sert. Constantes par `#define` (`GlobalIncludes.h:67,102-115,177`) | `Source/GlobalIncludes.h` |
-| Voix | 24 voix (`VOICES`), unisson, modes Legato, Poly, Retrig ; gestionnaire de voix avec ordre de vol (libres, en release, plus anciennes) | `GlobalIncludes.h:67,236`, `Source/audio/Voice.h:638-735` |
-| Oscillateurs | Analogique, wavetable 1D et 2D, multi, vecteur, chiptune avec arpégiateur, FM, PM, bruit, et trois tables dessinables (chip, wave, spectre) | `Source/audio/Oscillators/` |
-| Anti aliasing | Tables d'onde limitées en bande : 33 sous tables par table, construites au chargement à partir de coefficients de Fourier ; synchro avec suréchantillonnage ×3 | `Source/audio/OdinConstants.h:18`, `WavetableContainer.cpp:59`, `WavetableOsc1D.cpp:158-169` |
-| Filtres | Ladder (LP, BP, HP en 12 et 24 dB), SEM 12 dB, Korg 35 LP et HP, diode, formant, peigne, ring mod ; modèles VA de Pirkle (ZDF/TPT à partir de passe bas un pôle), overdrive `tanh` | `Source/audio/Filters/`, `LadderFilter.h:98-100,162-175`, `OdinFilterBase.h:43-73`, aiguillage `PluginProcessorProcess.cpp:258-297` |
-| Enveloppes | ADSR linéaires, modulables | `Source/audio/ADSR.cpp:27-48` |
-| Modulation | Matrice de 9 lignes | `GlobalIncludes.h:177`, `Source/gui/ModMatrix.h` |
-| Effets | Délai, chorus, flanger, phaser, réverbe Zita, distorsion suréchantillonnée, EQ paramétrique | `Source/audio/FX/` |
-| Calcul | En `double` dans les filtres (`LadderFilter.h:162`) | |
+| Engine / JUCE separation | None: `GlobalIncludes.h:17` includes `JuceHeader.h` and 26 files in `Source/audio/` use JUCE directly. The modulation matrix lives in `Source/gui/ModMatrix.h:181,258` although the audio code uses it. Constants through `#define` (`GlobalIncludes.h:67,102-115,177`) | `Source/GlobalIncludes.h` |
+| Voices | 24 voices (`VOICES`), unison, Legato, Poly, Retrig modes; voice manager with a stealing order (free, in release, oldest) | `GlobalIncludes.h:67,236`, `Source/audio/Voice.h:638-735` |
+| Oscillators | Analogue, 1D and 2D wavetable, multi, vector, chiptune with arpeggiator, FM, PM, noise, and three drawable tables (chip, wave, spectrum) | `Source/audio/Oscillators/` |
+| Anti aliasing | Band limited wavetables: 33 subtables per table, built at load time from Fourier coefficients; sync with ×3 oversampling | `Source/audio/OdinConstants.h:18`, `WavetableContainer.cpp:59`, `WavetableOsc1D.cpp:158-169` |
+| Filters | Ladder (LP, BP, HP at 12 and 24 dB), SEM 12 dB, Korg 35 LP and HP, diode, formant, comb, ring mod; Pirkle VA models (ZDF/TPT built from one pole low passes), `tanh` overdrive | `Source/audio/Filters/`, `LadderFilter.h:98-100,162-175`, `OdinFilterBase.h:43-73`, dispatch `PluginProcessorProcess.cpp:258-297` |
+| Envelopes | Linear ADSR, modulatable | `Source/audio/ADSR.cpp:27-48` |
+| Modulation | 9-row matrix | `GlobalIncludes.h:177`, `Source/gui/ModMatrix.h` |
+| Effects | Delay, chorus, flanger, phaser, Zita reverb, oversampled distortion, parametric EQ | `Source/audio/FX/` |
+| Computation | In `double` in the filters (`LadderFilter.h:162`) | |
 
-Points contraires à nos règles temps réel :
+Points contrary to our realtime rules:
 
-1. `VoiceManager::getVoices` renvoie un `std::vector<int>` construit par `push_back` et appelle `DBG` avec `std::to_string`, depuis le traitement MIDI du thread audio : `Source/audio/Voice.h:654-719`, appel `Source/PluginProcessorMidi.cpp:98`.
-2. Le DSP lit directement l'état JUCE ; aucun snapshot de paramètres.
+1. `VoiceManager::getVoices` returns a `std::vector<int>` built with `push_back` and calls `DBG` with `std::to_string`, from MIDI processing on the audio thread: `Source/audio/Voice.h:654-719`, call `Source/PluginProcessorMidi.cpp:98`.
+2. The DSP reads JUCE state directly; no parameter snapshot.
 
 ### 3.3 Presets
 
-| Sujet | Détail | Où |
+| Topic | Detail | Where |
 | --- | --- | --- |
-| Format | `.odin` = `juce::ValueTree` binaire (`writeToStream`), type racine `Odin`, sous arbres `osc`, `fx`, `lfo`, `draw`, `misc` | `assets/init_patch.odin`, `Source/PluginProcessorReadPatch.cpp:22-104` |
-| Migration | Numéro `patch_migration_version` (actuel : 5) comparé à `ODIN_PATCH_MIGRATION_VERSION`, migration dédiée | `GlobalIncludes.h:45`, `Source/PluginProcessorMigratePatch.cpp`, `PluginProcessorReadPatch.cpp:35-47` |
-| Factory | 266 `.odin` en banques et catégories | `assets/Soundbanks/` |
-| Navigateur | Navigateur de patchs complet (banques, catégories, import, export) dans l'UI | `Source/gui/PatchBrowser.h`, `PatchBrowserSelector.h`, `BrowserEntry.h` |
+| Format | `.odin` = binary `juce::ValueTree` (`writeToStream`), root type `Odin`, subtrees `osc`, `fx`, `lfo`, `draw`, `misc` | `assets/init_patch.odin`, `Source/PluginProcessorReadPatch.cpp:22-104` |
+| Migration | Number `patch_migration_version` (current: 5) compared with `ODIN_PATCH_MIGRATION_VERSION`, dedicated migration | `GlobalIncludes.h:45`, `Source/PluginProcessorMigratePatch.cpp`, `PluginProcessorReadPatch.cpp:35-47` |
+| Factory | 266 `.odin` in banks and categories | `assets/Soundbanks/` |
+| Browser | Full patch browser (banks, categories, import, export) in the UI | `Source/gui/PatchBrowser.h`, `PatchBrowserSelector.h`, `BrowserEntry.h` |
 
 ### 3.4 Build, tests, CI
 
-| Sujet | État |
+| Topic | State |
 | --- | --- |
-| Build | CMake 3.15 minimum, version 2.4.1, JUCE en sous module épinglé sur le tag **6.1.6**, plus un fork JUCE pour LV2. Formats VST3, AU, LV2, CLAP, Standalone |
-| Tests | Aucun |
-| CI | Azure Pipelines (`azure-pipelines.yml`) : Windows 2019, macOS, Ubuntu 22.04, build seulement |
-| Dernier commit | 2025-05-30 (`265e9e2`) |
+| Build | CMake 3.15 minimum, version 2.4.1, JUCE as a submodule pinned on tag **6.1.6**, plus a JUCE fork for LV2. Formats VST3, AU, LV2, CLAP, Standalone |
+| Tests | None |
+| CI | Azure Pipelines (`azure-pipelines.yml`): Windows 2019, macOS, Ubuntu 22.04, build only |
+| Last commit | 2025-05-30 (`265e9e2`) |
 
-### 3.5 Ce qu'on peut extraire (si AGPL)
+### 3.5 What we can extract (if AGPL)
 
-| Quoi | Couche chez nous | Effort |
+| What | Layer on our side | Effort |
 | --- | --- | --- |
-| `Source/audio/Filters/` (ladder, diode, Korg 35, SEM, VA un pôle) | `dsp/` | Moyen : retirer `GlobalIncludes.h`, passer en `float`, remplacer `FastMathApproximations::tanh`. Mieux : réécrire en TDD d'après le livre de Pirkle (une idée n'est pas protégée) ou prendre `chowdsp_filters` (GPL) ou `dsp::LadderFilter` de JUCE |
-| `Source/audio/FX/ZitaReverb.*` | `dsp/` | Moyen ; Cloud Seed Core (MIT) est déjà notre réverbe de référence |
-| `Source/audio/Oscillators/WavetableContainer.*` et coefficients | `dsp/` | Élevé : tableaux statiques énormes et macros ; on préfère `gin_dsp` (BSD) pour les wavetables |
+| `Source/audio/Filters/` (ladder, diode, Korg 35, SEM, one pole VA) | `dsp/` | Medium: remove `GlobalIncludes.h`, switch to `float`, replace `FastMathApproximations::tanh`. Better: rewrite with TDD from Pirkle's book (an idea is not protected) or take `chowdsp_filters` (GPL) or JUCE's `dsp::LadderFilter` |
+| `Source/audio/FX/ZitaReverb.*` | `dsp/` | Medium; Cloud Seed Core (MIT) is already our reference reverb |
+| `Source/audio/Oscillators/WavetableContainer.*` and coefficients | `dsp/` | High: huge static arrays and macros; we prefer `gin_dsp` (BSD) for wavetables |
 
-## 4. À reprendre
+## 4. To reuse
 
-### 4.1 Code à extraire
+### 4.1 Code to extract
 
-| # | Quoi | Source | Licence | Couche | Condition |
+| # | What | Source | Licence | Layer | Condition |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Moteur FM DX7 `msfa` (opérateurs, 32 algorithmes, enveloppes, LFO, pitch env, portamento) | Dexed `source/msfa/` sauf `tuning.*` | Apache 2.0 | `dsp/` | Toujours utilisable. Garder les en têtes, joindre la licence Apache, noter les modifications dans `PATCHES.md`, ADR non obligatoire (pas GPL) mais ligne dans `DEPENDENCIES.md` |
-| 2 | En tête `EngineMkI.h` | Dexed `source/engine/` | Apache 2.0 (le `.cpp` est GPL) | `dsp/` | Seulement si AGPL pour la paire complète |
-| 3 | Lecture et écriture des cartouches SysEx DX7 | Dexed `source/core/Cartridge.*`, `Program.*` | GPL v3 | `plugin/` | Si AGPL ; sinon réécriture depuis `doc/sysex-format.txt` |
-| 4 | Filtre OB-X 2 et 4 pôles, modes Xpander, avec tests | OB-Xf `src/engine/Filter.h`, `src/tests/filt.cpp` | GPL v3+ | `dsp/` | Si AGPL ; ADR obligatoire |
-| 5 | Oscillateurs BLEP et table BLEP | OB-Xf `src/engine/BlepData.h`, `SawOsc.h`, `PulseOsc.h`, `TriangleOsc.h` | GPL v3+ | `dsp/` | Si AGPL ; sinon `EllipticBlepOscillators.h` de sst-basic-blocks (MIT) ou `gin_dsp` (BSD) |
-| 6 | ADSR à courbe réglable, bruits coloré, décimateurs | OB-Xf `src/engine/AdsrEnvelope.h`, `Noise.h`, `Decimator.h` | GPL v3+ | `dsp/` | Si AGPL |
-| 7 | Import des banques OB-Xd | OB-Xf `src/state/ObxdImporter.*` | GPL v3+ | `plugin/` | Si AGPL et si on clone un OB-X |
+| 1 | DX7 FM engine `msfa` (operators, 32 algorithms, envelopes, LFO, pitch env, portamento) | Dexed `source/msfa/` except `tuning.*` | Apache 2.0 | `dsp/` | Always usable. Keep the headers, include the Apache licence, note changes in `PATCHES.md`, ADR not mandatory (not GPL) but a line in `DEPENDENCIES.md` |
+| 2 | `EngineMkI.h` header | Dexed `source/engine/` | Apache 2.0 (the `.cpp` is GPL) | `dsp/` | Only if AGPL for the complete pair |
+| 3 | Reading and writing DX7 SysEx cartridges | Dexed `source/core/Cartridge.*`, `Program.*` | GPL v3 | `plugin/` | If AGPL; otherwise rewrite from `doc/sysex-format.txt` |
+| 4 | OB-X 2 and 4-pole filter, Xpander modes, with tests | OB-Xf `src/engine/Filter.h`, `src/tests/filt.cpp` | GPL v3+ | `dsp/` | If AGPL; ADR mandatory |
+| 5 | BLEP oscillators and BLEP table | OB-Xf `src/engine/BlepData.h`, `SawOsc.h`, `PulseOsc.h`, `TriangleOsc.h` | GPL v3+ | `dsp/` | If AGPL; otherwise `EllipticBlepOscillators.h` from sst-basic-blocks (MIT) or `gin_dsp` (BSD) |
+| 6 | ADSR with adjustable curve, coloured noise, decimators | OB-Xf `src/engine/AdsrEnvelope.h`, `Noise.h`, `Decimator.h` | GPL v3+ | `dsp/` | If AGPL |
+| 7 | OB-Xd bank import | OB-Xf `src/state/ObxdImporter.*` | GPL v3+ | `plugin/` | If AGPL and if we clone an OB-X |
 
-### 4.2 Idées de conception
+### 4.2 Design ideas
 
-| # | Idée | Vu dans | Licence du code d'origine | Couche chez nous |
+| # | Idea | Seen in | Licence of the original code | Layer on our side |
 | --- | --- | --- | --- | --- |
-| 1 | Moteur par paquets fixes avec report du surplus d'un bloc sur le suivant, sans latence ajoutée | Dexed `PluginProcessor.cpp:228-268` | GPL v3 (idée libre) | `dsp/` |
-| 2 | Plusieurs moteurs derrière un pointeur choisi par paramètre (Modern, Mark I, OPL) | Dexed `PluginProcessor.cpp:478-493` | GPL v3 (idée libre) | `dsp/` |
-| 3 | Commandes type erased construites hors du thread audio et livrées par FIFO | Dexed `source/util/CommandFifo.h` | GPL v3 (idée libre) ; en pratique `farbot::fifo` (MIT) | `plugin/` |
-| 4 | Traiter quatre voix par registre SIMD | OB-Xf `src/engine/*Quad.h` | GPL v3+ (idée libre) | `dsp/` |
-| 5 | Découper le bloc à chaque événement MIDI pour un rendu précis à l'échantillon | OB-Xf `src/ObxfProcessor.cpp:176-195` | GPL v3+ (idée libre) | `plugin/` |
-| 6 | Sérialiser les sources et cibles de modulation par nom stable, jamais par entier | OB-Xf `src/engine/VoiceMatrix.h:79-120` | GPL v3+ (idée libre) | `plugin/` |
-| 7 | Rendus de référence du moteur entier régénérables par variable d'environnement, séparés des tests rapides par un tag Catch2 caché | OB-Xf `src/tests/engine.cpp:20-28,435` | GPL v3+ (idée libre) | tests de `dsp/` ; régénération toujours dans un commit `golden:` validé à l'écoute |
-| 8 | Preset = métadonnées (auteur, licence, catégorie, projet) en plus des valeurs | OB-Xf `src/state/StateManager.cpp:61-81` | GPL v3+ (idée libre) ; en pratique `chowdsp_presets_v2` ou `gin_plugin` (BSD) | `plugin/` |
-| 9 | Importer les formats d'un synthé existant avec une note sur chaque perte de fidélité | OB-Xf `README.md`, Dexed `Cartridge.cpp` | GPL (idée libre) | `plugin/` |
-| 10 | Numéro de migration de preset distinct du numéro de version du plugin | Odin 2 `GlobalIncludes.h:45`, `PluginProcessorMigratePatch.cpp` | GPL v3 (idée libre) | `plugin/` |
-| 11 | Tables d'onde limitées en bande générées à partir de coefficients de Fourier, une sous table par plage de fréquence | Odin 2 `WavetableContainer.cpp:59` | GPL v3 (idée libre) | `dsp/`, construction sur un thread de fond |
-| 12 | Liste de filtres VA de référence (ladder, diode, Korg 35, SEM) tirée de Pirkle, *Designing Software Synthesizer Plug-Ins in C++* | Odin 2 `Source/audio/Filters/` | Livre : idées libres | `dsp/`, en TDD |
+| 1 | Engine working in fixed chunks, carrying the remainder of one block over to the next, with no added latency | Dexed `PluginProcessor.cpp:228-268` | GPL v3 (idea is free) | `dsp/` |
+| 2 | Several engines behind a pointer chosen by parameter (Modern, Mark I, OPL) | Dexed `PluginProcessor.cpp:478-493` | GPL v3 (idea is free) | `dsp/` |
+| 3 | Type erased commands built off the audio thread and delivered through a FIFO | Dexed `source/util/CommandFifo.h` | GPL v3 (idea is free); in practice `farbot::fifo` (MIT) | `plugin/` |
+| 4 | Process four voices per SIMD register | OB-Xf `src/engine/*Quad.h` | GPL v3+ (idea is free) | `dsp/` |
+| 5 | Split the block at each MIDI event for sample accurate rendering | OB-Xf `src/ObxfProcessor.cpp:176-195` | GPL v3+ (idea is free) | `plugin/` |
+| 6 | Serialise modulation sources and targets by a stable name, never by integer | OB-Xf `src/engine/VoiceMatrix.h:79-120` | GPL v3+ (idea is free) | `plugin/` |
+| 7 | Whole engine reference renders regenerable through an environment variable, separated from the fast tests by a hidden Catch2 tag | OB-Xf `src/tests/engine.cpp:20-28,435` | GPL v3+ (idea is free) | `dsp/` tests; regeneration always in a `golden:` commit validated by listening |
+| 8 | Preset = metadata (author, licence, category, project) in addition to the values | OB-Xf `src/state/StateManager.cpp:61-81` | GPL v3+ (idea is free); in practice `chowdsp_presets_v2` or `gin_plugin` (BSD) | `plugin/` |
+| 9 | Import the formats of an existing synth with a note on each loss of fidelity | OB-Xf `README.md`, Dexed `Cartridge.cpp` | GPL (idea is free) | `plugin/` |
+| 10 | Preset migration number separate from the plugin version number | Odin 2 `GlobalIncludes.h:45`, `PluginProcessorMigratePatch.cpp` | GPL v3 (idea is free) | `plugin/` |
+| 11 | Band limited wavetables generated from Fourier coefficients, one subtable per frequency range | Odin 2 `WavetableContainer.cpp:59` | GPL v3 (idea is free) | `dsp/`, built on a background thread |
+| 12 | List of reference VA filters (ladder, diode, Korg 35, SEM) taken from Pirkle, *Designing Software Synthesizer Plug-Ins in C++* | Odin 2 `Source/audio/Filters/` | Book: ideas are free | `dsp/`, with TDD |
 
-### 4.3 À éviter
+### 4.3 To avoid
 
-| # | Défaut | Vu dans | Couche concernée chez nous | Règle |
+| # | Defect | Seen in | Layer concerned on our side | Rule |
 | --- | --- | --- | --- | --- |
-| 1 | Tables statiques globales dépendant de la fréquence d'échantillonnage | Dexed `msfa/freqlut.h:19`, `env.h:52,61`, `lfo.h:21,34-35` | `dsp/` | `dsp.md` : pas d'état global. À corriger en premier lors de l'extraction de `msfa` |
-| 2 | `new` dans `prepareToPlay` sans libération de l'allocation précédente | Dexed `PluginProcessor.cpp:147` | `plugin/` | `cpp.md` : RAII, pas de `new` nu |
-| 3 | Mutex et construction de `juce::String` en tête de `processBlock` | OB-Xf `ParameterUpdateHandler.cpp:157-159` | `plugin/` | `realtime-audio.md` : ni verrou ni allocation |
-| 4 | `std::vector::push_back` et `DBG` dans l'allocation de voix | Odin 2 `Voice.h:654-719` | `dsp/` | `realtime-audio.md` |
-| 5 | Générateur aléatoire global non seedable dans le DSP | OB-Xf `Voice.h:200-204` | `dsp/` | `dsp.md` : générateur déterministe et seedable |
-| 6 | DSP qui inclut `JuceHeader.h`, matrice de modulation rangée dans `gui/` | Odin 2 `GlobalIncludes.h:17`, `Source/gui/ModMatrix.h` | `dsp/`, `ui/` | `03_ARCHITECTURE.md` : `dsp/` sans JUCE, l'UI ne porte pas de logique audio |
-| 7 | Constantes et types de filtre en `#define` | Odin 2 `GlobalIncludes.h:67-177` | toutes | `cpp.md` : pas de macro hors configuration de build |
-| 8 | Fichiers sans en tête de licence au milieu d'un dossier sous une autre licence | Dexed `source/msfa/tuning.*` | toutes | Chaque fichier repris ou écrit porte son en tête |
-| 9 | Dépendre d'un projet dont le source peut disparaître | OB-Xd (source supprimé en 2026) | toutes | Épingler un commit, garder une copie vendored de ce qu'on reprend |
-| 10 | Tests de "référence" dont les valeurs attendues sont la sortie de l'implémentation | OB-Xf `src/tests/filt.cpp:344-519` | tests | `testing.md` : la valeur attendue cite sa source ; ces tests restent de la non régression |
+| 1 | Global static tables depending on the sample rate | Dexed `msfa/freqlut.h:19`, `env.h:52,61`, `lfo.h:21,34-35` | `dsp/` | `dsp.md`: no global state. Fix this first when extracting `msfa` |
+| 2 | `new` in `prepareToPlay` without freeing the previous allocation | Dexed `PluginProcessor.cpp:147` | `plugin/` | `cpp.md`: RAII, no bare `new` |
+| 3 | Mutex and `juce::String` construction at the top of `processBlock` | OB-Xf `ParameterUpdateHandler.cpp:157-159` | `plugin/` | `realtime-audio.md`: no lock and no allocation |
+| 4 | `std::vector::push_back` and `DBG` in voice allocation | Odin 2 `Voice.h:654-719` | `dsp/` | `realtime-audio.md` |
+| 5 | Global non seedable random generator in the DSP | OB-Xf `Voice.h:200-204` | `dsp/` | `dsp.md`: deterministic and seedable generator |
+| 6 | DSP that includes `JuceHeader.h`, modulation matrix stored in `gui/` | Odin 2 `GlobalIncludes.h:17`, `Source/gui/ModMatrix.h` | `dsp/`, `ui/` | `03_ARCHITECTURE.md`: `dsp/` without JUCE, the UI carries no audio logic |
+| 7 | Constants and filter types as `#define` | Odin 2 `GlobalIncludes.h:67-177` | all | `cpp.md`: no macros outside build configuration |
+| 8 | Files without a licence header in the middle of a folder under another licence | Dexed `source/msfa/tuning.*` | all | Every file reused or written carries its header |
+| 9 | Depending on a project whose source can disappear | OB-Xd (source removed in 2026) | all | Pin a commit, keep a vendored copy of what we reuse |
+| 10 | "Reference" tests whose expected values are the output of the implementation | OB-Xf `src/tests/filt.cpp:344-519` | tests | `testing.md`: the expected value cites its source; these tests remain non regression tests |

@@ -1,16 +1,16 @@
 # Gin
 
-**Verdict : Gin est entièrement BSD 3 (dépendances embarquées permissives), suit JUCE 9 et est très actif, mais `gin_plugin` est un cadre complet (processeur, paramètres, presets, UI) qu'on adopte en bloc à la place de l'APVTS, et sa matrice de modulation n'est pas sûre en temps réel quand l'UI ajoute ou retire une route pendant la lecture ; `gin_dsp` dépend de JUCE et ne peut donc pas vivre dans `dsp/`.**
+**Verdict: Gin is entirely BSD 3 (permissive bundled dependencies), follows JUCE 9 and is very active, but `gin_plugin` is a complete framework (processor, parameters, presets, UI) that is adopted as a whole instead of the APVTS, and its modulation matrix is not real-time safe when the UI adds or removes a route during playback; `gin_dsp` depends on JUCE and therefore cannot live in `dsp/`.**
 
-Étude faite le 2026-11-02 sur `master` au commit [`9e9c172`](https://github.com/FigBug/Gin/tree/9e9c172de34776c7c3157b5efbdc245dc7a2755f) (2026-11-01). Le dépôt n'a **aucun tag de version** : on épingle un commit. Les chemins `fichier:ligne` sont relatifs à la racine du dépôt et valent pour ce commit.
+Study done on 2026-11-02 on `master` at commit [`9e9c172`](https://github.com/FigBug/Gin/tree/9e9c172de34776c7c3157b5efbdc245dc7a2755f) (2026-11-01). The repository has **no version tag**: we pin a commit. The `file:line` paths are relative to the repository root and apply to that commit.
 
 ## 1. Licences
 
-### Gin lui même
+### Gin itself
 
-[`LICENSE`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/LICENSE) : **BSD 3-Clause**, "Copyright (c) 2018, Roland Rabien". Chaque module déclare `license: BSD` dans son en tête JUCE (ligne 24, par exemple [`modules/gin_plugin/gin_plugin.h:24`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/gin_plugin.h#L24)). Contrairement à chowdsp_utils, il n'y a pas de module GPL ; exemples et tests sont sous la même licence que le dépôt.
+[`LICENSE`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/LICENSE): **BSD 3-Clause**, "Copyright (c) 2018, Roland Rabien". Each module declares `license: BSD` in its JUCE header (line 24, for example [`modules/gin_plugin/gin_plugin.h:24`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/gin_plugin.h#L24)). Unlike chowdsp_utils, there is no GPL module; examples and tests are under the same licence as the repository.
 
-| Module | Licence | Dépendances (en tête, ligne 27) |
+| Module | Licence | Dependencies (header, line 27) |
 | --- | --- | --- |
 | `gin` | BSD | juce_core, juce_data_structures |
 | `gin_simd` | BSD | juce_core |
@@ -18,46 +18,46 @@
 | `gin_graphics` | BSD | juce_core, juce_graphics, gin |
 | `gin_gui` | BSD | juce_core, juce_graphics, juce_events, juce_gui_basics, juce_gui_extra, gin, gin_graphics |
 | `gin_plugin` | BSD | gin, gin_dsp, gin_gui, gin_graphics, juce_audio_utils, juce_audio_processors |
-| `gin_standaloneplugin` | BSD | gin_plugin et modules JUCE audio |
-| `gin_3d`, `gin_controllers`, `gin_location`, `gin_metadata`, `gin_network`, `gin_remote`, `gin_svg`, `gin_webp` | BSD | sans intérêt pour un plugin audio |
+| `gin_standaloneplugin` | BSD | gin_plugin and JUCE audio modules |
+| `gin_3d`, `gin_controllers`, `gin_location`, `gin_metadata`, `gin_network`, `gin_remote`, `gin_svg`, `gin_webp` | BSD | of no interest for an audio plugin |
 
-Tous les modules exigent C++20 (`minimumCppStandard: 20`).
+All modules require C++20 (`minimumCppStandard: 20`).
 
-### Dépendances embarquées
+### Bundled dependencies
 
-| Dépendance | Module | Licence (fichier lu) | Tirée par `gin_plugin` |
+| Dependency | Module | Licence (file read) | Pulled in by `gin_plugin` |
 | --- | --- | --- | --- |
-| muParser (Ingo Berg) | `gin/3rdparty/muParser` | MIT (en tête) | Oui |
-| bsdiff (Colin Percival) | `gin/3rdparty/bsdiff` | BSD 2 (en tête) | Oui |
-| MIPP | `gin_simd/mipp` | MIT (LICENSE) | Oui |
-| AudioFilter | `gin_dsp/3rdparty/AudioFilter` | MIT (readme.md:131-133) | Oui |
-| Secret Rabbit Code (libsamplerate) | `gin_dsp/3rdparty/SecretRabbitCode` | BSD 2 (en tête de `samplerate.c`) | Oui |
-| PlateReverb (Mike Jarmy, algorithme Dattorro 1997) | `gin_dsp/dsp/gin_platereverb.h` | MIT (en tête) | Oui |
-| AirWindows (Chris Johnson) | `gin_dsp/dsp/gin_distortion.h` | MIT (en tête) | Oui |
-| AVIR | `gin_graphics/3rdparty/avir` | MIT (LICENSE) | Oui |
-| Police Barlow | `gin_plugin/resources/Barlow-Regular.ttf` | SIL OFL 1.1 d'après le projet amont ; **aucun texte de licence dans le dépôt** | Oui |
-| NanoSVG | `gin_svg` | zlib (en tête) | Non |
-| libwebp | `gin_webp` | BSD (Google) + PATENTS | Non |
-| mbed TLS | `gin_network` | Apache 2.0 ou GPL 2.0+ | Non |
+| muParser (Ingo Berg) | `gin/3rdparty/muParser` | MIT (header) | Yes |
+| bsdiff (Colin Percival) | `gin/3rdparty/bsdiff` | BSD 2 (header) | Yes |
+| MIPP | `gin_simd/mipp` | MIT (LICENSE) | Yes |
+| AudioFilter | `gin_dsp/3rdparty/AudioFilter` | MIT (readme.md:131-133) | Yes |
+| Secret Rabbit Code (libsamplerate) | `gin_dsp/3rdparty/SecretRabbitCode` | BSD 2 (header of `samplerate.c`) | Yes |
+| PlateReverb (Mike Jarmy, Dattorro 1997 algorithm) | `gin_dsp/dsp/gin_platereverb.h` | MIT (header) | Yes |
+| AirWindows (Chris Johnson) | `gin_dsp/dsp/gin_distortion.h` | MIT (header) | Yes |
+| AVIR | `gin_graphics/3rdparty/avir` | MIT (LICENSE) | Yes |
+| Barlow font | `gin_plugin/resources/Barlow-Regular.ttf` | SIL OFL 1.1 according to the upstream project; **no licence text in the repository** | Yes |
+| NanoSVG | `gin_svg` | zlib (header) | No |
+| libwebp | `gin_webp` | BSD (Google) + PATENTS | No |
+| mbed TLS | `gin_network` | Apache 2.0 or GPL 2.0+ | No |
 
-Conséquence : tout ce que tire `gin_plugin` est compatible avec un plugin fermé **et** un plugin AGPL. Seule action : joindre le texte OFL de Barlow dans les licences livrées (règle "polices embarquées, licences incluses" de `.claude/rules/ui.md`), ou remplacer la police.
+Consequence: everything `gin_plugin` pulls in is compatible with a closed-source plugin **and** an AGPL plugin. The only action: include Barlow's OFL text in the shipped licences (the "embedded fonts, licences included" rule of `.claude/rules/ui.md`), or replace the font.
 
 ## 2. `gin_plugin`
 
-### 2.1 Le processeur étendu
+### 2.1 The extended processor
 
-`gin::Processor` ([`modules/gin_plugin/plugin/gin_processor.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h)) hérite de `juce::AudioProcessor` et remplace l'APVTS.
+`gin::Processor` ([`modules/gin_plugin/plugin/gin_processor.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h)) inherits from `juce::AudioProcessor` and replaces the APVTS.
 
-| Fonction | Comment |
+| Function | How |
 | --- | --- |
-| Paramètres | `addExtParam` (exposé à l'hôte) et `addIntParam` (interne, non automatisable) avec plage, défaut, `SmoothingType` (linéaire ou eased, durée) et fonction de texte ; puis `init()` |
-| Valeurs | `getUserValue()` (plage affichée), `getProcValue()` (après `conversionFunction`, par exemple dB vers linéaire), `getProcValue (n)` qui avance le lissage de n échantillons ; `isSmoothing()` |
-| Stockage | `std::atomic<float> value` ([`gin_parameter.h:200`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_parameter.h#L200)) ; notification UI par `RealtimeAsyncUpdater`, sans allocation côté audio |
-| État | XML : un `ValueTree state` libre pour le reste (`updateState()` et `stateUpdated()` à surcharger), plus un élément `param` par paramètre |
-| Presets | `Program` : un fichier XML par preset (`name`, `author`, `tags`, `state`, `param`) dans le dossier utilisateur, surveillé par `FileSystemWatcher` ; dossiers factory en lecture seule via `getFactoryProgramDirectories()` |
-| Divers | MIDI learn optionnel, réglages persistants (`PropertiesFile`), groupes de paramètres |
+| Parameters | `addExtParam` (exposed to the host) and `addIntParam` (internal, not automatable) with range, default, `SmoothingType` (linear or eased, duration) and text function; then `init()` |
+| Values | `getUserValue()` (displayed range), `getProcValue()` (after `conversionFunction`, for example dB to linear), `getProcValue (n)`, which advances the smoothing by n samples; `isSmoothing()` |
+| Storage | `std::atomic<float> value` ([`gin_parameter.h:200`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_parameter.h#L200)); UI notification through `RealtimeAsyncUpdater`, without allocation on the audio side |
+| State | XML: a free-form `ValueTree state` for everything else (`updateState()` and `stateUpdated()` to override), plus one `param` element per parameter |
+| Presets | `Program`: one XML file per preset (`name`, `author`, `tags`, `state`, `param`) in the user folder, watched by `FileSystemWatcher`; read-only factory folders through `getFactoryProgramDirectories()` |
+| Misc | Optional MIDI learn, persistent settings (`PropertiesFile`), parameter groups |
 
-Exemple minimal (BSD, adapté de `examples/Effect`) :
+Minimal example (BSD, adapted from `examples/Effect`):
 
 ```cpp
 class Effect : public gin::Processor
@@ -72,121 +72,121 @@ public:
     void processBlock (juce::AudioBuffer<float>& b, juce::MidiBuffer&) override
     {
         juce::ScopedNoDenormals nd;
-        snapshot.gain = level->getProcValue (b.getNumSamples()); // valeur lissée avancée d'un bloc
+        snapshot.gain = level->getProcValue (b.getNumSamples()); // smoothed value advanced by one block
         engine.process (snapshot, /* … */);
     }
     gin::Parameter* level = nullptr;
 };
 ```
 
-**Points qui heurtent nos règles (`.claude/rules/juce.md`).**
+**Points that clash with our rules (`.claude/rules/juce.md`).**
 
-1. **Mise à jour et nouvelles en réseau activées par défaut** : `useUpdateChecker = true` et `useNewsChecker = true` ([`gin_processor.h:135-136`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h#L135-L136)) ; l'éditeur lit alors `<site>/updates.xml` et `<site>/feed/` ([`components/gin_plugineditor.cpp:116`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_plugineditor.cpp#L116), [`:199`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_plugineditor.cpp#L199)). À désactiver systématiquement.
-2. **L'état ne porte pas de version.** `getStateXml` n'écrit que les paramètres **différents de leur défaut** ([`gin_processor.cpp:647`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L647)) et `setStateXml` remet tout au défaut avant de relire ([`gin_processor.cpp:676`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L676)). Changer un défaut dans une version ultérieure change donc silencieusement le son des sessions existantes. Il faut écrire nous mêmes un attribut de version dans `state` (dans `updateState`) et la migration dans `stateUpdated`.
-3. `versionHint` est un seul entier pour tous les paramètres ([`gin_processor.h:388`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h#L388)), lu à la création de chaque paramètre : pour respecter "version de paramètre incrémentée à chaque ajout", on le modifie entre deux séries d'`addExtParam`.
-4. `setCurrentProgram` est ignoré pendant 2 s après un chargement d'état ([`gin_processor.cpp:364`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L364)) ; à savoir pour les tests.
+1. **Network update and news checks enabled by default**: `useUpdateChecker = true` and `useNewsChecker = true` ([`gin_processor.h:135-136`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h#L135-L136)); the editor then reads `<site>/updates.xml` and `<site>/feed/` ([`components/gin_plugineditor.cpp:116`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_plugineditor.cpp#L116), [`:199`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_plugineditor.cpp#L199)). Always disable them.
+2. **The state carries no version.** `getStateXml` only writes the parameters **that differ from their default** ([`gin_processor.cpp:647`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L647)) and `setStateXml` resets everything to default before reading back ([`gin_processor.cpp:676`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L676)). Changing a default in a later version therefore silently changes the sound of existing sessions. We must write a version attribute into `state` ourselves (in `updateState`) and the migration in `stateUpdated`.
+3. `versionHint` is a single integer for all parameters ([`gin_processor.h:388`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.h#L388)), read when each parameter is created: to follow "parameter version incremented on every addition", change it between two series of `addExtParam` calls.
+4. `setCurrentProgram` is ignored for 2 s after a state load ([`gin_processor.cpp:364`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_processor.cpp#L364)); worth knowing for tests.
 
-### 2.2 La matrice de modulation
+### 2.2 The modulation matrix
 
-Fichiers : [`plugin/gin_imodmatrix.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_imodmatrix.h) (interface vue par l'UI, `ModSrcId` ligne 13, `ModDstId` ligne 35, `ModFunction` ligne 73) et [`plugin/gin_modmatrix.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h) (`ModVoice` ligne 8, `ModMatrix` ligne 93).
+Files: [`plugin/gin_imodmatrix.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_imodmatrix.h) (interface seen by the UI, `ModSrcId` line 13, `ModDstId` line 35, `ModFunction` line 73) and [`plugin/gin_modmatrix.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h) (`ModVoice` line 8, `ModMatrix` line 93).
 
-| Concept | Fonctionnement |
+| Concept | How it works |
 | --- | --- |
-| Sources | `addMonoModSource (id, nom, bipolaire)` et `addPolyModSource (…)` ([`gin_modmatrix.h:320-321`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h#L320-L321)) renvoient un `ModSrcId`. Valeur écrite par bloc : `setMonoValue (src, v)` ou `setPolyValue (voice, src, v)` |
-| Destinations | Tout `gin::Parameter` passé à `addParameter (p, poly, smoothingTime)` (ligne 322) ; le paramètre reçoit un pointeur vers la matrice, ce qui allume l'anneau de modulation de son `Knob` |
-| Routes | Par destination, une liste de `Source` : profondeur, activée, mapping bipolaire, courbe (`linear`, `quadratic`, `sine`, `exponential` In/Out/InOut et leurs inverses) |
-| Calcul | `getValue (param)` ou `getValue (voice, param)` ([`gin_modmatrix.h:233-296`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h#L233-L296)) : valeur normalisée du paramètre + somme des sources mises en forme × profondeur, bornée à [0, 1], lissée par un `ValueSmoother` par paramètre et par voix, puis convertie dans la plage utilisateur |
-| Voix | La voix hérite de `ModVoice` ; `ModMatrix::addVoice` à la construction ; `finishBlock (n)` avance les lisseurs |
-| Apprentissage | `enableLearn (src)` + `ModOverlay` : on clique une source puis on glisse sur un knob |
-| Persistance | `updateState` et `stateUpdated` écrivent et relisent un nœud `MODMATRIX` de `MODITEM` (`srcId`, `dstId`, `depth`, `enabled`, `function`, `biPolarMapping`) dans le `ValueTree` du processeur, donc dans les sessions et les presets |
-| Tests | 11 tests `juce::UnitTest` dans [`gin_modmatrix.test.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.test.h) |
+| Sources | `addMonoModSource (id, name, bipolar)` and `addPolyModSource (…)` ([`gin_modmatrix.h:320-321`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h#L320-L321)) return a `ModSrcId`. Value written per block: `setMonoValue (src, v)` or `setPolyValue (voice, src, v)` |
+| Destinations | Any `gin::Parameter` passed to `addParameter (p, poly, smoothingTime)` (line 322); the parameter receives a pointer to the matrix, which lights up the modulation ring of its `Knob` |
+| Routes | Per destination, a list of `Source`s: depth, enabled, bipolar mapping, curve (`linear`, `quadratic`, `sine`, `exponential` In/Out/InOut and their inverses) |
+| Computation | `getValue (param)` or `getValue (voice, param)` ([`gin_modmatrix.h:233-296`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.h#L233-L296)): normalised parameter value + sum of the shaped sources × depth, clamped to [0, 1], smoothed by a `ValueSmoother` per parameter and per voice, then converted to the user range |
+| Voices | The voice inherits from `ModVoice`; `ModMatrix::addVoice` at construction; `finishBlock (n)` advances the smoothers |
+| Learn | `enableLearn (src)` + `ModOverlay`: click a source, then drag on a knob |
+| Persistence | `updateState` and `stateUpdated` write and read back a `MODMATRIX` node of `MODITEM`s (`srcId`, `dstId`, `depth`, `enabled`, `function`, `biPolarMapping`) in the processor's `ValueTree`, hence in sessions and presets |
+| Tests | 11 `juce::UnitTest` tests in [`gin_modmatrix.test.h`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.test.h) |
 
-**Thread safety côté audio.** Le chemin audio (`getValue`, `setMonoValue`, `setPolyValue`, `finishBlock`) n'alloue pas et ne verrouille pas. En revanche les structures sont des `juce::Array` non protégées :
+**Thread safety on the audio side.** The audio path (`getValue`, `setMonoValue`, `setPolyValue`, `finishBlock`) neither allocates nor locks. However, the structures are unprotected `juce::Array`s:
 
-| Appel depuis le message thread | Effet si l'audio tourne |
+| Call from the message thread | Effect if audio is running |
 | --- | --- |
-| `setModDepth` sur une route existante ([`gin_modmatrix.cpp:350`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L350)) | Écriture d'un `float` non atomique : course de données bénigne en pratique |
-| `setModDepth` qui **crée** une route, `clearModDepth` ([`:416`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L416)) | `pi.sources.add` ou `remove` peut réallouer pendant que `getValue` itère : **accès mémoire libérée possible** |
-| `stateUpdated` (chargement d'état ou de preset, [`:66`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L66)) | Vide puis reconstruit toutes les listes, sans verrou ni suspension du traitement |
+| `setModDepth` on an existing route ([`gin_modmatrix.cpp:350`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L350)) | Write of a non-atomic `float`: a data race that is benign in practice |
+| `setModDepth` that **creates** a route, `clearModDepth` ([`:416`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L416)) | `pi.sources.add` or `remove` can reallocate while `getValue` iterates: **possible use-after-free** |
+| `stateUpdated` (state or preset load, [`:66`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/plugin/gin_modmatrix.cpp#L66)) | Clears and then rebuilds all the lists, with no lock and no suspension of processing |
 
-Aucun verrou ni `suspendProcessing` n'entoure ces appels, ni dans `gin_plugin` ni dans l'exemple `Synth`. Pour respecter `.claude/rules/realtime-audio.md`, il faut soit patcher `ModMatrix` pour publier une table de routage immuable par échange de pointeur atomique (libération différée hors thread audio), soit envelopper ces trois appels. C'est un patch à maintenir.
+No lock or `suspendProcessing` surrounds these calls, neither in `gin_plugin` nor in the `Synth` example. To comply with `.claude/rules/realtime-audio.md`, we must either patch `ModMatrix` to publish an immutable routing table through an atomic pointer swap (deferred release off the audio thread), or wrap these three calls. It is a patch to maintain.
 
-### 2.3 Composants UI
+### 2.3 UI components
 
-Tous prennent des `gin::Parameter*`, pas des paramètres JUCE génériques : ils supposent `gin::Processor`.
+They all take `gin::Parameter*`, not generic JUCE parameters: they assume `gin::Processor`.
 
-| Composant | Fichier | Rôle |
+| Component | File | Role |
 | --- | --- | --- |
-| `Knob` | [`components/gin_knob.h:55`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_knob.h#L55) | Rotatif + valeur + anneau de modulation live ; `Knob (param, fromCentre)` |
-| `Select`, `Switch`, `Fader`, `HorizontalFader`, `PluginComboBox`, `PluginButton` | `components/` | Contrôles liés à un paramètre |
-| `ADSRComponent` | [`components/gin_adsrcomponent.h:48`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_adsrcomponent.h#L48) | Enveloppe éditable à la souris, `setParams (a, d, s, r)` |
-| `LFOComponent` | [`components/gin_lfocomponent.h:49`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_lfocomponent.h#L49) | Forme du LFO avec phase animée |
-| `MSEGComponent`, `StepLFOComponent` | `components/` | Édition d'enveloppe multi segments et de LFO à pas |
-| `ModMatrixBox`, `ModSrcListBox`, `ModulationSourceButton`, `ModulationDepthSlider`, `ModOverlay`, `ModulationOverview` | `components/` | Liste des routes, sources glissables, apprentissage |
-| `PatchBrowser` | [`components/gin_patchbrowser.h:43`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_patchbrowser.h#L43) | Liste des `Program`, filtres par auteur et tags |
-| `ParamBox`, `ParamArea`, `ProcessorEditor`, `ScaledPluginEditor` | `components/` | Mise en page en panneaux, barre de titre (presets, menu), mise à l'échelle |
-| `CopperLookAndFeel`, `PluginLookAndFeel` | `lookandfeel/` | Look complet avec la police Barlow |
+| `Knob` | [`components/gin_knob.h:55`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_knob.h#L55) | Rotary + value + live modulation ring; `Knob (param, fromCentre)` |
+| `Select`, `Switch`, `Fader`, `HorizontalFader`, `PluginComboBox`, `PluginButton` | `components/` | Controls bound to a parameter |
+| `ADSRComponent` | [`components/gin_adsrcomponent.h:48`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_adsrcomponent.h#L48) | Envelope editable with the mouse, `setParams (a, d, s, r)` |
+| `LFOComponent` | [`components/gin_lfocomponent.h:49`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_lfocomponent.h#L49) | LFO shape with animated phase |
+| `MSEGComponent`, `StepLFOComponent` | `components/` | Multi-segment envelope and step LFO editing |
+| `ModMatrixBox`, `ModSrcListBox`, `ModulationSourceButton`, `ModulationDepthSlider`, `ModOverlay`, `ModulationOverview` | `components/` | Route list, draggable sources, learn |
+| `PatchBrowser` | [`components/gin_patchbrowser.h:43`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_plugin/components/gin_patchbrowser.h#L43) | List of `Program`s, filters by author and tags |
+| `ParamBox`, `ParamArea`, `ProcessorEditor`, `ScaledPluginEditor` | `components/` | Panel layout, title bar (presets, menu), scaling |
+| `CopperLookAndFeel`, `PluginLookAndFeel` | `lookandfeel/` | Complete look with the Barlow font |
 
 ## 3. `gin_dsp`
 
-Module JUCE (dépend de `juce_dsp`, `juce_audio_utils`) : **pas utilisable dans notre `dsp/` sans JUCE**. Ses classes sont simples (`setSampleRate`, `reset`, `process (juce::AudioSampleBuffer&)`), donc faciles à envelopper dans `plugin/`.
+A JUCE module (depends on `juce_dsp`, `juce_audio_utils`): **not usable in our JUCE-free `dsp/`**. Its classes are simple (`setSampleRate`, `reset`, `process (juce::AudioSampleBuffer&)`), so they are easy to wrap in `plugin/`.
 
-| Domaine | Classes | Réutilisable chez nous |
+| Area | Classes | Reusable on our side |
 | --- | --- | --- |
-| Oscillateurs | `StereoOscillator` (VA à tables bande limitée), `VoicedStereoOscillator` et `BLLTVoicedStereoOscillator` (unisson), `WTOscillator`, `WTVoicedStereoOscillator`, `BandLimitedLookupTables`, `SampleOscillator` | Oui, pour un synthé |
-| Enveloppes | `ADSR` (linéaire), `AnalogADSR`, `MSEG` | Oui |
-| LFO | `LFO` (18 formes, delay, fade), `StepLFO` | Oui |
-| Filtres | `Filter` (biquad multi canal, pentes, sur AudioFilter MIT, MZTi près de Nyquist), `EQ`, `GraphicEQ`, `DCBlocker` | Oui |
-| Dynamique | `Dynamics` + `EnvelopeDetector`, `GateEffect`, `Maximizer`, `TransientShaper` | Oui |
-| Effets | `SimpleVerb`, `PlateReverb` (Dattorro), `StereoDelay`, `DelayLine`, `AirWindowsDistortion`, `SoftClipper`, `BitCrusher`, `Exciter`, `StereoEnhancer`, `StereoProcessor` | Oui |
-| Mesure | `LevelTracker`, `RMSMeter`, `LoudnessMeter` (K weighting), `TruePeakMeter`, `CorrelationMeter` + composants d'affichage (`components/`) | Oui, côté `ui/` |
-| Utilitaires | `ValueSmoother`, `EasedValueSmoother`, `AudioFifo`, `AudioMidiFifo`, `ResamplingFifo` (libsamplerate), `Synthesiser` MPE avec glide, `Sample`, `SamplePlayer`, `MidiFilePlayer` | Au cas par cas |
+| Oscillators | `StereoOscillator` (VA with band-limited tables), `VoicedStereoOscillator` and `BLLTVoicedStereoOscillator` (unison), `WTOscillator`, `WTVoicedStereoOscillator`, `BandLimitedLookupTables`, `SampleOscillator` | Yes, for a synth |
+| Envelopes | `ADSR` (linear), `AnalogADSR`, `MSEG` | Yes |
+| LFO | `LFO` (18 shapes, delay, fade), `StepLFO` | Yes |
+| Filters | `Filter` (multichannel biquad, slopes, built on AudioFilter MIT, MZTi near Nyquist), `EQ`, `GraphicEQ`, `DCBlocker` | Yes |
+| Dynamics | `Dynamics` + `EnvelopeDetector`, `GateEffect`, `Maximizer`, `TransientShaper` | Yes |
+| Effects | `SimpleVerb`, `PlateReverb` (Dattorro), `StereoDelay`, `DelayLine`, `AirWindowsDistortion`, `SoftClipper`, `BitCrusher`, `Exciter`, `StereoEnhancer`, `StereoProcessor` | Yes |
+| Metering | `LevelTracker`, `RMSMeter`, `LoudnessMeter` (K weighting), `TruePeakMeter`, `CorrelationMeter` + display components (`components/`) | Yes, on the `ui/` side |
+| Utilities | `ValueSmoother`, `EasedValueSmoother`, `AudioFifo`, `AudioMidiFifo`, `ResamplingFifo` (libsamplerate), MPE `Synthesiser` with glide, `Sample`, `SamplePlayer`, `MidiFilePlayer` | Case by case |
 
-Trois réserves :
+Three caveats:
 
-1. **Aléatoire non déterministe** : `LFO` (formes S&H et bruit) et `WTOscillator::noteOn` sans phase explicite utilisent `juce::Random::getSystemRandom()` (voir [`BREAKING_CHANGES.md`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/BREAKING_CHANGES.md), novembre 2026). Contraire à `.claude/rules/dsp.md` et aux références `tests/golden/` : passer une phase explicite et ne pas utiliser ces formes dans un rendu de test.
-2. **Verrous** : `Synthesiser` prend un `CriticalSection` sur le thread audio (comme `juce::MPESynthesiser`), `SamplePlayer` et `MidiFilePlayer` un `SpinLock`, `ScratchBuffer` un `CriticalSection`. À éviter dans `processBlock` ou à faire valider par `rt-safety-reviewer`.
-3. `Filter::setNumChannels` alloue ([`dsp/gin_filter.h:90-100`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_dsp/dsp/gin_filter.h#L90-L100)) : à appeler dans `prepareToPlay` seulement.
+1. **Non-deterministic randomness**: `LFO` (S&H and noise shapes) and `WTOscillator::noteOn` without an explicit phase use `juce::Random::getSystemRandom()` (see [`BREAKING_CHANGES.md`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/BREAKING_CHANGES.md), November 2026). This goes against `.claude/rules/dsp.md` and the `tests/golden/` references: pass an explicit phase and do not use these shapes in a test render.
+2. **Locks**: `Synthesiser` takes a `CriticalSection` on the audio thread (like `juce::MPESynthesiser`), `SamplePlayer` and `MidiFilePlayer` a `SpinLock`, `ScratchBuffer` a `CriticalSection`. Avoid them in `processBlock` or have them validated by `rt-safety-reviewer`.
+3. `Filter::setNumChannels` allocates ([`dsp/gin_filter.h:90-100`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/modules/gin_dsp/dsp/gin_filter.h#L90-L100)): call it in `prepareToPlay` only.
 
-Le comportement audible change parfois entre deux commits : `BREAKING_CHANGES.md` les liste. Épingler un commit et relire ce fichier à chaque mise à jour.
+Audible behaviour sometimes changes between two commits: `BREAKING_CHANGES.md` lists those changes. Pin a commit and reread this file on every update.
 
-## 4. Compatibilité JUCE 9, activité, exemples
+## 4. JUCE 9 compatibility, activity, examples
 
-| Point | Constat |
+| Item | Finding |
 | --- | --- |
-| JUCE 9 | La CI clone la branche `develop` de JUCE ([`ci/build.sh:11`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/ci/build.sh#L11)), donc la tête de JUCE 9 ; commits "Fix building with JUCE 9" (2026-06-23) et "gin_network builds with JUCE 9" (2026-10-31). Le README annonce JUCE 7.0+ |
-| Risque inverse | Suivre `develop` veut dire qu'un commit Gin peut exiger un JUCE plus récent que notre tag épinglé : compiler avant de monter Gin |
-| CI | Linux, macOS, Windows, couverture Codecov |
-| Tests | 93 fichiers `*.test.h` (`juce::UnitTest`), dont 45 dans `gin_dsp` et 6 dans `gin_plugin`, lancés par `examples/UnitTests` |
-| Activité | Commits par mois depuis novembre 2025 : 149, 58, 32, 9, 4, 6, 13, 10, 10, 32, 5, 15, 10 (novembre 2026 en cours). Mainteneur principal Roland Rabien (SocaLabs), soutien de reFX |
-| Exemples | `examples/Effect` (gain, pan, inversion avec lissage, 125 lignes), `examples/Synth` (synthé MPE complet : oscillateurs, filtre, ADSR, LFO mono et poly, délai, matrice de modulation, `ParamBox` et knobs), `examples/Demo` (vitrine des modules), `examples/UnitTests` |
+| JUCE 9 | CI clones JUCE's `develop` branch ([`ci/build.sh:11`](https://github.com/FigBug/Gin/blob/9e9c172de34776c7c3157b5efbdc245dc7a2755f/ci/build.sh#L11)), hence the head of JUCE 9; commits "Fix building with JUCE 9" (2026-06-23) and "gin_network builds with JUCE 9" (2026-10-31). The README states JUCE 7.0+ |
+| Reverse risk | Following `develop` means a Gin commit may require a newer JUCE than our pinned tag: compile before bumping Gin |
+| CI | Linux, macOS, Windows, Codecov coverage |
+| Tests | 93 `*.test.h` files (`juce::UnitTest`), including 45 in `gin_dsp` and 6 in `gin_plugin`, run by `examples/UnitTests` |
+| Activity | Commits per month since November 2025: 149, 58, 32, 9, 4, 6, 13, 10, 10, 32, 5, 15, 10 (November 2026 in progress). Main maintainer Roland Rabien (SocaLabs), supported by reFX |
+| Examples | `examples/Effect` (gain, pan, inversion with smoothing, 125 lines), `examples/Synth` (complete MPE synth: oscillators, filter, ADSR, mono and poly LFOs, delay, modulation matrix, `ParamBox` and knobs), `examples/Demo` (module showcase), `examples/UnitTests` |
 
-## 5. Comment on l'utiliserait dans nos plugins
+## 5. How we would use it in our plugins
 
-### Décision par type de plugin
+### Decision by plugin type
 
-| Plugin | Recommandation |
+| Plugin | Recommendation |
 | --- | --- |
-| Effet simple ou multi effet sans modulation | Ne pas prendre `gin_plugin` : chowdsp_plugin_state ou APVTS suffisent et gardent l'état versionné. Piocher dans `gin_dsp` si un bloc manque à `juce_dsp` |
-| Synthé ou effet avec modulation interne (LFO, enveloppes, routage) | Prendre `gin_plugin` en bloc : `gin::Processor`, `ModMatrix`, knobs, ADSR, LFO, MSEG, `PatchBrowser`. Le gain (matrice + son UI) dépasse le coût, à condition d'ajouter le patch de thread safety et la version d'état |
+| Simple effect or multi-effect without modulation | Do not take `gin_plugin`: chowdsp_plugin_state or the APVTS are enough and keep the state versioned. Pick from `gin_dsp` if a building block is missing from `juce_dsp` |
+| Synth or effect with internal modulation (LFOs, envelopes, routing) | Take `gin_plugin` as a whole: `gin::Processor`, `ModMatrix`, knobs, ADSR, LFO, MSEG, `PatchBrowser`. The gain (matrix + its UI) outweighs the cost, provided the thread safety patch and the state version are added |
 
-On ne mélange pas `gin::Processor` avec `chowdsp::PluginStateImpl` ou l'APVTS : les deux possèdent les paramètres et l'état.
+Do not mix `gin::Processor` with `chowdsp::PluginStateImpl` or the APVTS: both own the parameters and the state.
 
-### Par couche, pour un synthé
+### By layer, for a synth
 
-| Couche | Ce que fournit Gin | Ce qu'on écrit |
+| Layer | What Gin provides | What we write |
 | --- | --- | --- |
-| `dsp/` | Rien (Gin dépend de JUCE) | Le moteur sonore pur ; ou on accepte que les oscillateurs et enveloppes de `gin_dsp` vivent dans `plugin/` derrière une interface |
-| `plugin/` | `gin::Processor`, `gin::Parameter` (déclarés dans un seul `Parameters.cpp` avec IDs constants), `ModMatrix`, `ModVoice`, `Program` | Le snapshot `Params` rempli par `modMatrix.getValue(...)` ; un attribut de version dans `state` et la migration dans `stateUpdated` ; le patch de `ModMatrix` (dans `patches/`, avec ADR) ; `ProcessorOptions().withoutUpdateChecker().withoutNewsChecker()` |
-| `ui/` | `ProcessorEditor`, `Knob`, `ADSRComponent`, `LFOComponent`, `MSEGComponent`, `ModSrcListBox`, `ModOverlay`, `PatchBrowser`, `CopperLookAndFeel` | Le document de design et notre LookAndFeel ; le texte OFL de la police |
-| `tests/plugin/` | Rien de directement réutilisable | Round trip d'état incluant le nœud `MODMATRIX`, chargement d'états des versions publiées, test de stress qui modifie les routes pendant `processBlock` sous ThreadSanitizer |
+| `dsp/` | Nothing (Gin depends on JUCE) | The pure sound engine; or we accept that the `gin_dsp` oscillators and envelopes live in `plugin/` behind an interface |
+| `plugin/` | `gin::Processor`, `gin::Parameter` (declared in a single `Parameters.cpp` with constant IDs), `ModMatrix`, `ModVoice`, `Program` | The `Params` snapshot filled by `modMatrix.getValue(...)`; a version attribute in `state` and the migration in `stateUpdated`; the `ModMatrix` patch (in `patches/`, with an ADR); `ProcessorOptions().withoutUpdateChecker().withoutNewsChecker()` |
+| `ui/` | `ProcessorEditor`, `Knob`, `ADSRComponent`, `LFOComponent`, `MSEGComponent`, `ModSrcListBox`, `ModOverlay`, `PatchBrowser`, `CopperLookAndFeel` | The design document and our LookAndFeel; the font's OFL text |
+| `tests/plugin/` | Nothing directly reusable | State round trip including the `MODMATRIX` node, loading states from released versions, a stress test that changes routes during `processBlock` under ThreadSanitizer |
 
 ### CMake
 
 ```cmake
-add_subdirectory(JUCE)                        # tag épinglé, compatible avec le commit Gin choisi
-add_subdirectory(third_party/Gin/modules)     # juce_add_module pour chaque module ; pas le CMakeLists racine (il ajoute juce/ et les exemples)
+add_subdirectory(JUCE)                        # pinned tag, compatible with the chosen Gin commit
+add_subdirectory(third_party/Gin/modules)     # juce_add_module for each module; not the root CMakeLists (it adds juce/ and the examples)
 target_link_libraries(SharedCode INTERFACE gin gin_simd gin_dsp gin_graphics gin_gui gin_plugin)
 ```
 
-Gin est un sous module épinglé sur un commit (pas de tag). On ne lie ni `gin_webp` (il force `JUCE_USE_WEBP=0`) ni `gin_network` (mbed TLS) : `gin_plugin` n'en a pas besoin.
+Gin is a submodule pinned to a commit (no tag). We link neither `gin_webp` (it forces `JUCE_USE_WEBP=0`) nor `gin_network` (mbed TLS): `gin_plugin` does not need them.
