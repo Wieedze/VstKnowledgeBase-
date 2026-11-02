@@ -27,9 +27,9 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 
 ## p1 · Phase 1 · Skeleton
 
-- [ ] Create the MoodzFilter repo from Pamplejuce · copy .claude/, CLAUDE.md, GLOSSARY.md and the SPEC
-- [ ] Pin JUCE 9 to a tag, remove AU, AUv3, CLAP, Standalone · make signing conditional on the secrets
-- [ ] Separate the dsp, plugin, ui, tools targets · dsp/ without JUCE, CI test that checks it
+- [x] Create the MoodzFilter repo from Pamplejuce · task 0001, https://github.com/Wieedze/MoodzFilter/pull/1
+- [x] Pin JUCE 9 to a tag, remove AU, AUv3, CLAP, Standalone · task 0001, JUCE 9.0.5, VST3 only, https://github.com/Wieedze/MoodzFilter/pull/1
+- [~] Separate the dsp, plugin, ui, tools targets · task 0002, dsp/ without JUCE, CI test that checks it
 - [ ] Smoothed gain alone, with TDD · exact gain, NaN, block size, state, frozen IDs
 - [ ] tools render and compare, first golden reference
 - [ ] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10

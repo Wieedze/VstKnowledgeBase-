@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-02 · MoodzFilter repo created, first green CI
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/1
+
+Task 0001 passed the task-verifier: the Pamplejuce template became MoodzFilter with the ADR 0002 identity, VST3 only, JUCE pinned to tag 9.0.5, AGPLv3 licence and the playbook layer copied in. CI is green on Linux and Windows (GitHub Actions run 41461476342) and pluginval at strictness 10 passes locally and in CI. The phase 1 gate is not passed yet: the VST3 still has to be loaded in Ableton Live.
+
 ## 2026-11-02 · Index website online
 
 Project: Playbook
