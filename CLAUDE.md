@@ -58,6 +58,7 @@ docs/
   04_TESTS.md           stratégie de tests et CI
   05_WORKFLOW_AGENTIQUE.md
   06_PLAN_DEMARRAGE.md
+  07_A_REPRENDRE.md     ce qu'on récupère au lieu de le coder (à lire avant d'écrire un composant)
   tasks/TEMPLATE.md     modèle de tâche atomique
 .claude/
   STATE.md              état courant, maintenu à la main

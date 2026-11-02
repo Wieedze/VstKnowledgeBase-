@@ -22,7 +22,7 @@ Un agent ne peut pas écouter le plugin. Tout ce qui compte doit donc être vér
 * Aucune NaN/Inf sur un balayage des paramètres aux bornes.
 * Indépendance à la taille de bloc.
 * Indépendance au sample rate quand c'est attendu (44,1 / 48 / 96 kHz).
-* Pas d'allocation dans `process` : compteur d'allocation en build de test (opérateur `new` surchargé qui échoue si un drapeau "zone temps réel" est actif).
+* Pas d'allocation ni de lock dans `process` : [RealtimeSanitizer](https://clang.llvm.org/docs/RealtimeSanitizer.html) (clang, `-fsanitize=realtime`, fonctions temps réel marquées `[[clang::nonblocking]]`) dans un job CI dédié. Rien à coder nous mêmes.
 
 Utiliser [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) pour que les échecs affichent la forme du signal en ASCII.
 

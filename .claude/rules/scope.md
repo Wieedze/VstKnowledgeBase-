@@ -20,6 +20,7 @@ Un plugin dérive vite : une matrice de modulation qui passe de 4 à 17 sources,
 5. **Quand un agent hésite sur le périmètre, il s'arrête et demande.** Il ne choisit pas l'option la plus large.
 6. **Pas de "petit refactor au passage"** dans une tâche de fonctionnalité. Refactor = tâche dédiée.
 7. **Le son prime sur l'UI** : pas de travail visuel sur une fonctionnalité dont le DSP n'a pas passé ses tests et l'écoute.
+8. **Ne pas coder ce qui existe.** Avant d'écrire un composant, appliquer la règle de choix de `docs/07_A_REPRENDRE.md` : JUCE, puis MIT/BSD, puis GPL si le plugin est AGPL, puis seulement notre code. La recherche faite est notée dans la tâche.
 
 ## Signaux de dérive (à vérifier par le task-verifier)
 

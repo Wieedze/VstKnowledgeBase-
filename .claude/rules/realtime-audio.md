@@ -27,5 +27,6 @@ Le "thread audio" couvre `processBlock`, tout ce qu'il appelle, et `prepareToPla
 ## Comment le vérifier
 
 * Revue du diff par l'agent `rt-safety-reviewer`.
-* En build de test : allocateur instrumenté qui fait échouer le test s'il est appelé pendant `process`.
+* RealtimeSanitizer : `processBlock` et les `process` du DSP marqués `[[clang::nonblocking]]`, tests lancés avec `-fsanitize=realtime` en CI.
+* Primitives prêtes plutôt que maison : `farbot::RealtimeObject`, `farbot::fifo`, `AbstractFifo` (voir `docs/07_A_REPRENDRE.md`).
 * `tools bench` : le coût max d'un bloc reste sous le budget.

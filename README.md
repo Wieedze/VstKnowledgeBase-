@@ -15,6 +15,7 @@ Ce repo ne contient pas de plugin. Il contient ce qu'on doit savoir et décider 
 | 5 | [`docs/04_TESTS.md`](docs/04_TESTS.md) | Catch2, outil headless, pluginval, non régression audio, CI |
 | 6 | [`docs/05_WORKFLOW_AGENTIQUE.md`](docs/05_WORKFLOW_AGENTIQUE.md) | La méthode ARP adaptée au C++ audio, skills Matt Pocock |
 | 7 | [`docs/06_PLAN_DEMARRAGE.md`](docs/06_PLAN_DEMARRAGE.md) | Les premières étapes concrètes d'un nouveau plugin |
+| 8 | [`docs/07_A_REPRENDRE.md`](docs/07_A_REPRENDRE.md) | Tout ce qu'on récupère tout fait (bibliothèques, outils, patterns) au lieu de le coder |
 
 Les règles que les agents doivent appliquer sont dans [`.claude/rules/`](.claude/rules/00-INDEX.md). Le routeur pour Claude Code est [`CLAUDE.md`](CLAUDE.md).
 
