@@ -15,3 +15,7 @@ Demandé ou imaginé, volontairement pas construit maintenant. Une ligne par id�
 ## MoodzFilter (hors v1, voir `docs/plugins/moodzfilter/SPEC.md`)
 
 * 2026-11-02 : suiveur d'enveloppe ; décalage de phase stéréo du LFO ; mid/side ; matrice de modulation et destinations autres que le cutoff ; interface dessinée et analyseur ; suivi des notes MIDI ; sidechain ; macOS et Linux ; plus de 4 modèles de filtre.
+
+## Après MoodzFilter
+
+* 2026-11-02 : un VST communautaire. Les gens votent en ligne sur les fonctionnalités, et chaque semaine on implémente le vote gagnant. Préalable : finir MoodzFilter de bout en bout pour savoir ce que l'index doit contenir. Points à trancher le moment venu : où voter (le public ne peut pas écrire dans un artefact claude.ai, il faut GitHub ou un site à soi), qui trie les propositions avant le vote, comment une semaine de vote passe par grilling, SPEC et ADR sans casser les règles temps réel ni les IDs de paramètres, et la signature des binaires pour une diffusion publique.
