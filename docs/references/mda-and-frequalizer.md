@@ -1,281 +1,281 @@
-# mda-plugins-juce et Frequalizer
+# mda-plugins-juce and Frequalizer
 
-**Verdict mda-plugins-juce : tout le dépôt est sous licence MIT (Paul Kellett 2008, Matthijs Hollemans 2021-2025), donc réutilisable que le plugin soit AGPL ou fermé. Les 24 plugins ont un cœur DSP qui n'utilise presque rien de JUCE (des boucles sur `float*` avec des membres simples) et s'extrait facilement dans `dsp/`, mais ce sont des algorithmes d'il y a vingt ans, sans lissage de paramètres, sans latence ni queue déclarées, parfois avec `rand()` sur le thread audio. On les reprend comme algorithmes de départ commentés, réécrits à notre format (`prepare`/`reset`/`process`, `Params`, tests), pas comme code de production tel quel.**
+**mda-plugins-juce verdict: the whole repository is under the MIT licence (Paul Kellett 2008, Matthijs Hollemans 2021-2025), so it is reusable whether the plugin is AGPL or closed. The 24 plugins have a DSP core that uses almost nothing from JUCE (loops over `float*` with simple members) and extracts easily into `dsp/`, but these are twenty-year-old algorithms, without parameter smoothing, without declared latency or tail, sometimes with `rand()` on the audio thread. We take them as annotated starting algorithms, rewritten in our format (`prepare`/`reset`/`process`, `Params`, tests), not as production code as is.**
 
-**Verdict Frequalizer : licence BSD 3-Clause (Daniel Walz, Foleys Finest Audio, 2018), réutilisable partout. Le dépôt n'est plus maintenu depuis janvier 2022, il est épinglé sur JUCE 6.1.2 et ne compile pas sur JUCE 9 sans retouches. Les idées (analyseur FFT sur thread de fond alimenté par `AbstractFifo`, courbe d'EQ via `getMagnitudeForFrequencyArray`, glisser les bandes dans le graphe) sont bonnes ; le code viole plusieurs de nos règles temps réel (verrou et allocation possibles sur le thread audio, accès à l'éditeur depuis `processBlock`). On reprend la structure et les formules de tracé, on réécrit le transport de données. La version évoluée de l'analyseur, dans foleys_gui_magic (BSD 3, actif), est un meilleur point de départ.**
+**Frequalizer verdict: BSD 3-Clause licence (Daniel Walz, Foleys Finest Audio, 2018), reusable everywhere. The repository has not been maintained since January 2022, it is pinned on JUCE 6.1.2 and does not compile on JUCE 9 without changes. The ideas (FFT analyser on a background thread fed by `AbstractFifo`, EQ curve through `getMagnitudeForFrequencyArray`, dragging bands in the graph) are good; the code violates several of our realtime rules (possible lock and allocation on the audio thread, editor access from `processBlock`). We take the structure and the plotting formulas, and rewrite the data transport. The evolved version of the analyser, in foleys_gui_magic (BSD 3, active), is a better starting point.**
 
-Étude faite le 2026-11-02 sur deux clones superficiels :
+Study done on 2026-11-02 on two shallow clones:
 
-1. mda-plugins-juce, `master` au commit [`5527024`](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb) (2026-02-25, "add dither plug-in").
-2. Frequalizer, `master` au commit [`c4b1b61`](https://github.com/ffAudio/Frequalizer/tree/c4b1b611c8d818107639c79f974bca6a414d672d) (2022-01-16, "Added notarization").
+1. mda-plugins-juce, `master` at commit [`5527024`](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb) (2026-02-25, "add dither plug-in").
+2. Frequalizer, `master` at commit [`c4b1b61`](https://github.com/ffAudio/Frequalizer/tree/c4b1b611c8d818107639c79f974bca6a414d672d) (2022-01-16, "Added notarization").
 
-Les chemins `fichier:ligne` sont relatifs à la racine de chaque dépôt et valent pour ces commits. Les vérifications d'API JUCE 9 ont été faites sur la copie de JUCE 9.0.4 présente dans `study/TetraDrive/external/JUCE`.
+The `file:line` paths are relative to the root of each repository and are valid for these commits. The JUCE 9 API checks were done on the copy of JUCE 9.0.4 present in `study/TetraDrive/external/JUCE`.
 
 ---
 
-# Partie A : mda-plugins-juce
+# Part A: mda-plugins-juce
 
 ## A1. Licence
 
-[`LICENSE.txt`](https://github.com/hollance/mda-plugins-juce/blob/552702479a9eac534f3abbf6e878a5eab473e0cb/LICENSE.txt) : **MIT**, avec deux lignes de copyright : "Copyright (c) 2008 Paul Kellett" et "Copyright (c) 2021-2025 M.I. Hollemans (JUCE version)". Le `README.markdown` le confirme ("This source code is licensed under the MIT license but keep in mind that JUCE has its own licensing terms").
+[`LICENSE.txt`](https://github.com/hollance/mda-plugins-juce/blob/552702479a9eac534f3abbf6e878a5eab473e0cb/LICENSE.txt): **MIT**, with two copyright lines: "Copyright (c) 2008 Paul Kellett" and "Copyright (c) 2021-2025 M.I. Hollemans (JUCE version)". The `README.markdown` confirms it ("This source code is licensed under the MIT license but keep in mind that JUCE has its own licensing terms").
 
-| Point vérifié | Constat |
+| Point checked | Finding |
 | --- | --- |
-| En têtes de fichiers | Aucun fichier source ne porte d'en tête de licence ou de copyright (recherche de `Copyright`, `License`, `GPL`, `MIT` dans tous les `.h` et `.cpp` : aucun résultat). Le `LICENSE.txt` racine couvre donc tout. |
-| Données d'échantillons | `Piano/Source/mdaPianoData.h` (3,3 Mo) et `EPiano/Source/mdaEPianoData.h` (2,3 Mo) sont des tableaux `short` issus des plugins originaux, sans licence séparée : ils tombent sous le MIT du dépôt. |
-| Code MDA d'origine | Le dépôt dit s'appuyer sur la publication SourceForge `mda-vst` de Paul Kellett ; le `LICENSE.txt` reprend le MIT de 2008. Le port LV2 `mda.lv2` (David Robillard) est, lui, sous GPL d'après le projet amont (non vérifié ici) : **ne pas confondre les deux sources**. |
-| Ports AU de Sophia Poirier | Le README dit les avoir "consultés". Leur licence n'est pas indiquée dans le dépôt (*à vérifier* si on voulait les lire aussi) ; le code publié ici reste sous MIT par son auteur. |
+| File headers | No source file carries a licence or copyright header (search for `Copyright`, `License`, `GPL`, `MIT` in all `.h` and `.cpp`: no result). The root `LICENSE.txt` therefore covers everything. |
+| Sample data | `Piano/Source/mdaPianoData.h` (3.3 MB) and `EPiano/Source/mdaEPianoData.h` (2.3 MB) are `short` arrays taken from the original plugins, without a separate licence: they fall under the repository's MIT. |
+| Original MDA code | The repository says it builds on Paul Kellett's SourceForge `mda-vst` release; the `LICENSE.txt` reuses the 2008 MIT. The LV2 port `mda.lv2` (David Robillard) is, for its part, under GPL according to the upstream project (not verified here): **do not confuse the two sources**. |
+| Sophia Poirier's AU ports | The README says they were "consulted". Their licence is not stated in the repository (*to verify* if we wanted to read them too); the code published here remains under MIT by its author. |
 
-Conséquence : utilisable dans un plugin AGPL comme dans un plugin fermé, à condition de garder la notice MIT (les deux lignes de copyright) dans `docs/DEPENDENCIES.md` et dans les notices du binaire.
+Consequence: usable in an AGPL plugin as well as in a closed plugin, provided the MIT notice (the two copyright lines) is kept in `docs/DEPENDENCIES.md` and in the binary's notices.
 
-## A2. Les 24 plugins
+## A2. The 24 plugins
 
-Taille = lignes de `PluginProcessor.cpp` + `PluginProcessor.h`. "Extractible" juge l'effort pour sortir le DSP dans une classe `dsp/` sans JUCE. Dans tous les plugins, les seuls symboles JUCE hors squelette (APVTS, bus, état, éditeur) sont `juce::Decibels::decibelsToGain`, `juce::MathConstants` (RingMod) et `juce::Random` (TestTone) ; les synthés lisent en plus un `juce::MidiBuffer`.
+Size = lines of `PluginProcessor.cpp` + `PluginProcessor.h`. "Extractable" rates the effort to move the DSP into a `dsp/` class without JUCE. In all the plugins, the only JUCE symbols outside the skeleton (APVTS, buses, state, editor) are `juce::Decibels::decibelsToGain`, `juce::MathConstants` (RingMod) and `juce::Random` (TestTone); the synths also read a `juce::MidiBuffer`.
 
-| Nom | Type | Technique DSP | Taille | DSP extractible sans JUCE | Intérêt pour nous |
+| Name | Type | DSP technique | Size | DSP extractable without JUCE | Interest for us |
 | --- | --- | --- | --- | --- | --- |
-| [Ambience](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Ambience) | Effet | Petite réverbe : passe bas un pôle puis quatre allpass de Schroeder en série (gain direct 1, rétroaction 0,8) sur des tampons de 1024 échantillons. | 303 + 70 | Facile | Faible : longueurs en échantillons non mises à l'échelle du taux d'échantillonnage (`Ambience/Source/PluginProcessor.cpp:105-111`), `new[]` sans libération préalable si `prepareToPlay` est rappelé (`:44-47`). Idée seulement. |
-| [Bandisto](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Bandisto) | Effet | Distorsion 3 bandes : crossover par trois passe bas un pôle en série (reconstruction exacte `l + m + h`), waveshaper `x / (1 + d·|x|)` par bande, côté stéréo non distordu. | 367 + 57 | Facile | Moyen : bon exemple de séparation de bandes reconstructible et de waveshaper simple ; aliasing non traité (pas d'oversampling). |
-| [BeatBox](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/BeatBox) | Effet | Remplacement de batterie : suiveurs d'enveloppe sur trois bandes filtrées déclenchant des sons kick, caisse claire, charleston synthétisés au `prepareToPlay` (sinus amorti, bruit filtré). | 540 + 93 | Moyen (`std::rand()` dans `synth()`, `BeatBox/Source/PluginProcessor.cpp:112,144`) | Faible, sauf l'idée de déclencheur par bande. |
-| [Degrade](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Degrade) | Effet | Bitcrusher : écrêtage, quantification, réduction de fréquence d'échantillonnage (échantillonnage ou moyenne), non linéarité en puissance, puis chaîne de passe bas un pôle. | 379 + 79 | Facile | Moyen : base d'un "lo-fi" ; le passe bas `filterFreq` est documenté (`Degrade/Source/PluginProcessor.cpp:69-90`). |
-| [Delay](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Delay) | Effet | Délai stéréo à tampon mono unique, retards entiers G et D (D en ratio de G), filtre de tonalité un pôle passe bas ou passe haut dans la boucle de rétroaction. | 372 + 87 | Facile | Moyen : bon modèle commenté de délai, mais retard entier (pas d'interpolation, donc pas de modulation possible), `getTailLengthSeconds` à 0. `juce::dsp::DelayLine` fait mieux pour la ligne elle même. |
-| [Detune](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Detune) | Effet | Pitch shifter à ligne de délai : deux têtes de lecture à vitesse ±cents, interpolation linéaire, fondu par fenêtre de Hann en demi recouvrement. | 330 + 61 | Facile (tableaux fixes `BUFMAX = 4096`, `Detune/Source/PluginProcessor.h:46-49`) | Bon : effet "doubleur" à faible coût, très bien expliqué (`Detune/Source/PluginProcessor.cpp:137-161`). Latence non déclarée (`setLatencySamples` absent). |
-| [Dither](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Dither) | Effet | Réduction de longueur de mot : troncature, dither TPDF, TPDF passe haut, mise en forme du bruit du second ordre. | 313 + 74 | Facile, mais `rand()` dans la boucle (`Dither/Source/PluginProcessor.cpp:171,176`) | Bon pour un étage de sortie ou un outil de mastering ; remplacer `rand()` par un générateur seedable (règle `dsp.md`). |
-| [DX10](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/DX10) | Instrument | Synthé FM à deux opérateurs, 8 voix, enveloppes exponentielles, LFO par oscillateur récursif mis à jour tous les 100 échantillons. | 939 + 184 | Moyen : il faut sortir le découpage du bloc par événement MIDI (`DX10/Source/PluginProcessor.cpp:389-530`) | Bon comme base de synthé FM minimal et de gestion de voix. |
-| [Dynamics](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Dynamics) | Effet | Compresseur crête lié stéréo (suiveur attaque/relâche un pôle, gain `1/(1 + r·(env/seuil − 1))`), limiteur à attaque nulle et gate dans la même boucle. | 396 + 63 | Facile | Moyen : lisible, mais `juce::dsp::Compressor`/`NoiseGate`/`Limiter` couvrent déjà le besoin. Utile pour la courbe "overcompression". |
-| [Envelope](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Envelope) | Effet | Suiveur d'enveloppe et VCA ; modes L×|R|, sortie d'enveloppe en DC, aplatissement de dynamique. | 243 + 55 | Facile | Faible comme plugin, utile comme brique (suiveur d'enveloppe un pôle). |
-| [EPiano](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/EPiano) | Instrument | Lecture d'échantillons Rhodes par groupes de touches, désaccord pseudo aléatoire par note, LFO tremolo ou panoramique, overdrive. | 866 + 207 + données 2,3 Mo | Moyen (MIDI, gros en tête de données) | Moyen : bon exemple de lecteur d'échantillons multi zones à très faible coût ; données lourdes à compiler. |
-| [Image](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Image) | Effet | Matrice M/S : largeur et pan de la composante stéréo, niveau et pan du centre, encodage et décodage M/S. | 233 + 49 | Facile | Bon : brique stéréo prête (dix lignes de calcul). |
-| [JX10](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/JX10) | Instrument | Synthé soustractif 8 voix : deux scies band limitées par intégration d'impulsions sinc (`JX10/Source/PluginProcessor.cpp:697-785`), SVF de Chamberlin modifié avec saturation douce (`:864-869`), enveloppes un pôle, contrôle à taux réduit (32 échantillons), glide, modes mono/legato. | 1610 + 274 | Moyen | **Élevé** pour un synthé : le plus documenté du dépôt, et l'auteur en a tiré un livre (lien dans `JX10/README.markdown`). |
-| [Limiter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Limiter) | Effet | Limiteur style opto, genou dur ou doux, gain lissé attaque/relâche ; pas un limiteur brickwall (pas d'anticipation). | 320 + 74 | Facile | Moyen : explication pédagogique (`Limiter/Source/PluginProcessor.cpp:140-174`), mais pas de look ahead. |
-| [Loudness](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Loudness) | Effet | Correction des courbes d'égale sonie (Stevens-Davis) par une table de coefficients interpolée et deux passe bas un pôle en boost ou en coupe. | 228 + 52 | Facile | Faible à moyen : niche (correction de grave selon le niveau d'écoute). |
-| [Overdrive](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Overdrive) | Effet | Saturation douce `sign(x)·sqrt(|x|)` mélangée au signal propre, puis passe bas un pôle ("Muffle"). | 193 + 60 | Facile | Moyen : saturation la plus simple possible ; sans oversampling, donc à entourer de `juce::dsp::Oversampling` ou à remplacer par un clipper ADAA. |
-| [Piano](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Piano) | Instrument | Lecture d'échantillons de piano par groupes de touches, 32 voix, pédale de sustain, accordage étiré, filtre "Muffle" lié à la vélocité. | 842 + 211 + données 3,3 Mo | Moyen | Moyen : même remarque qu'EPiano. |
-| [RezFilter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/RezFilter) | Effet | Filtre résonant (variante de SVF de Chamberlin, instable près de Nyquist selon l'auteur) modulé par suiveur d'enveloppe et LFO sinus ou sample and hold. | 407 + 70 | Facile, mais `rand()` dans la boucle (`RezFilter/Source/PluginProcessor.cpp:166,241`) | Faible : l'auteur déconseille ce filtre (`:178-182`) ; prendre `juce::dsp::StateVariableTPTFilter` ou un SVF de Cytomic. Garder l'idée de modulation. |
-| [RingMod](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/RingMod) | Effet | Modulateur en anneau par sinus, avec rétroaction de la sortie. | 194 + 63 | Facile | Faible : trivial ; bon premier exercice TDD. |
-| [Shepard](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Shepard) | Générateur | Son de Risset (Shepard continu) par deux tables d'onde lues avec un fondu, seul, en anneau ou mélangé à l'entrée. | 245 + 67 | Facile (tables générées une fois, `Shepard/Source/PluginProcessor.cpp:11-22`) | Faible. |
-| [Splitter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Splitter) | Effet | Séparation par fréquence (crossover un pôle) et par niveau (gate à enveloppe), modes normal, inverse et split G/D. | 327 + 57 | Facile | Faible. |
-| [Stereo](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Stereo) | Effet | Élargisseur mono vers stéréo : panoramique Haas ou filtrage en peigne, retard modulable par LFO. | 395 + 75 | Facile (retard en échantillons, dépend du taux, `Stereo/Source/PluginProcessor.cpp:47-54`) | Moyen : deux techniques d'élargissement classiques. |
-| [SubSynth](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/SubSynth) | Effet | Synthèse de sub grave : distorsion du grave filtré, division d'octave par bascule, inversion de phase par cycle, ou oscillateur déclenché ("Key Osc"). | 389 + 80 | Facile | Moyen pour un plugin de basse ou de batterie. |
-| [TestTone](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/TestTone) | Générateur | Générateur de test : sinus MIDI ou tiers d'octave, impulsion, bruits blanc et rose, balayages log et linéaires. | 718 + 130 | Moyen (`juce::Random`, `std::rand()` ligne 313, écouteur de paramètres) | **Bon pour nos tests** : signaux de référence pour `tools render` et les tests DSP ; à réécrire avec un générateur seedable. |
+| [Ambience](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Ambience) | Effect | Small reverb: one pole low pass then four Schroeder allpasses in series (direct gain 1, feedback 0.8) on 1024-sample buffers. | 303 + 70 | Easy | Low: lengths in samples not scaled to the sample rate (`Ambience/Source/PluginProcessor.cpp:105-111`), `new[]` without prior freeing if `prepareToPlay` is called again (`:44-47`). Idea only. |
+| [Bandisto](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Bandisto) | Effect | 3-band distortion: crossover with three one pole low passes in series (exact reconstruction `l + m + h`), waveshaper `x / (1 + d·|x|)` per band, stereo side not distorted. | 367 + 57 | Easy | Medium: good example of a reconstructible band split and a simple waveshaper; aliasing not handled (no oversampling). |
+| [BeatBox](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/BeatBox) | Effect | Drum replacement: envelope followers on three filtered bands triggering kick, snare and hi-hat sounds synthesised in `prepareToPlay` (damped sine, filtered noise). | 540 + 93 | Medium (`std::rand()` in `synth()`, `BeatBox/Source/PluginProcessor.cpp:112,144`) | Low, except the idea of a per band trigger. |
+| [Degrade](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Degrade) | Effect | Bitcrusher: clipping, quantisation, sample rate reduction (sampling or averaging), power non linearity, then a chain of one pole low passes. | 379 + 79 | Easy | Medium: basis for a "lo-fi"; the `filterFreq` low pass is documented (`Degrade/Source/PluginProcessor.cpp:69-90`). |
+| [Delay](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Delay) | Effect | Stereo delay with a single mono buffer, integer L and R delays (R as a ratio of L), one pole low pass or high pass tone filter in the feedback loop. | 372 + 87 | Easy | Medium: good annotated delay model, but integer delay (no interpolation, so no modulation possible), `getTailLengthSeconds` at 0. `juce::dsp::DelayLine` does better for the line itself. |
+| [Detune](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Detune) | Effect | Delay line pitch shifter: two read heads at ±cents speed, linear interpolation, crossfade with a Hann window at half overlap. | 330 + 61 | Easy (fixed arrays `BUFMAX = 4096`, `Detune/Source/PluginProcessor.h:46-49`) | Good: low cost "doubler" effect, very well explained (`Detune/Source/PluginProcessor.cpp:137-161`). Latency not declared (`setLatencySamples` absent). |
+| [Dither](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Dither) | Effect | Word length reduction: truncation, TPDF dither, high pass TPDF, second order noise shaping. | 313 + 74 | Easy, but `rand()` in the loop (`Dither/Source/PluginProcessor.cpp:171,176`) | Good for an output stage or a mastering tool; replace `rand()` with a seedable generator (`dsp.md` rule). |
+| [DX10](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/DX10) | Instrument | Two-operator FM synth, 8 voices, exponential envelopes, LFO through a recursive oscillator updated every 100 samples. | 939 + 184 | Medium: the block split per MIDI event must be pulled out (`DX10/Source/PluginProcessor.cpp:389-530`) | Good as a basis for a minimal FM synth and voice management. |
+| [Dynamics](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Dynamics) | Effect | Stereo linked peak compressor (one pole attack/release follower, gain `1/(1 + r·(env/threshold − 1))`), zero attack limiter and gate in the same loop. | 396 + 63 | Easy | Medium: readable, but `juce::dsp::Compressor`/`NoiseGate`/`Limiter` already cover the need. Useful for the "overcompression" curve. |
+| [Envelope](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Envelope) | Effect | Envelope follower and VCA; L×|R| modes, envelope output as DC, dynamics flattening. | 243 + 55 | Easy | Low as a plugin, useful as a building block (one pole envelope follower). |
+| [EPiano](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/EPiano) | Instrument | Rhodes sample playback by key groups, pseudo random per note detuning, tremolo or pan LFO, overdrive. | 866 + 207 + 2.3 MB data | Medium (MIDI, large data header) | Medium: good example of a very low cost multi zone sample player; heavy data to compile. |
+| [Image](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Image) | Effect | M/S matrix: width and pan of the stereo component, level and pan of the centre, M/S encoding and decoding. | 233 + 49 | Easy | Good: ready stereo building block (ten lines of computation). |
+| [JX10](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/JX10) | Instrument | 8-voice subtractive synth: two band limited saws by sinc impulse integration (`JX10/Source/PluginProcessor.cpp:697-785`), modified Chamberlin SVF with soft saturation (`:864-869`), one pole envelopes, reduced rate control (32 samples), glide, mono/legato modes. | 1610 + 274 | Medium | **High** for a synth: the best documented in the repository, and the author wrote a book based on it (link in `JX10/README.markdown`). |
+| [Limiter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Limiter) | Effect | Opto style limiter, hard or soft knee, attack/release smoothed gain; not a brickwall limiter (no look ahead). | 320 + 74 | Easy | Medium: educational explanation (`Limiter/Source/PluginProcessor.cpp:140-174`), but no look ahead. |
+| [Loudness](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Loudness) | Effect | Equal loudness curve correction (Stevens-Davis) through an interpolated coefficient table and two one pole low passes in boost or cut. | 228 + 52 | Easy | Low to medium: niche (bass correction depending on listening level). |
+| [Overdrive](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Overdrive) | Effect | Soft saturation `sign(x)·sqrt(|x|)` mixed with the clean signal, then a one pole low pass ("Muffle"). | 193 + 60 | Easy | Medium: the simplest possible saturation; no oversampling, so wrap it in `juce::dsp::Oversampling` or replace it with an ADAA clipper. |
+| [Piano](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Piano) | Instrument | Piano sample playback by key groups, 32 voices, sustain pedal, stretched tuning, velocity linked "Muffle" filter. | 842 + 211 + 3.3 MB data | Medium | Medium: same remark as EPiano. |
+| [RezFilter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/RezFilter) | Effect | Resonant filter (variant of the Chamberlin SVF, unstable near Nyquist according to the author) modulated by an envelope follower and a sine or sample and hold LFO. | 407 + 70 | Easy, but `rand()` in the loop (`RezFilter/Source/PluginProcessor.cpp:166,241`) | Low: the author advises against this filter (`:178-182`); take `juce::dsp::StateVariableTPTFilter` or a Cytomic SVF. Keep the modulation idea. |
+| [RingMod](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/RingMod) | Effect | Sine ring modulator, with output feedback. | 194 + 63 | Easy | Low: trivial; a good first TDD exercise. |
+| [Shepard](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Shepard) | Generator | Risset tone (continuous Shepard) from two wavetables read with a crossfade, alone, ring modulated or mixed with the input. | 245 + 67 | Easy (tables generated once, `Shepard/Source/PluginProcessor.cpp:11-22`) | Low. |
+| [Splitter](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Splitter) | Effect | Split by frequency (one pole crossover) and by level (envelope gate), normal, inverse and L/R split modes. | 327 + 57 | Easy | Low. |
+| [Stereo](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/Stereo) | Effect | Mono to stereo widener: Haas panning or comb filtering, delay modulatable by LFO. | 395 + 75 | Easy (delay in samples, depends on the rate, `Stereo/Source/PluginProcessor.cpp:47-54`) | Medium: two classic widening techniques. |
+| [SubSynth](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/SubSynth) | Effect | Sub bass synthesis: distortion of the filtered bass, octave division by flip-flop, phase inversion per cycle, or triggered oscillator ("Key Osc"). | 389 + 80 | Easy | Medium for a bass or drum plugin. |
+| [TestTone](https://github.com/hollance/mda-plugins-juce/tree/552702479a9eac534f3abbf6e878a5eab473e0cb/TestTone) | Generator | Test generator: MIDI or third octave sine, impulse, white and pink noise, log and linear sweeps. | 718 + 130 | Medium (`juce::Random`, `std::rand()` line 313, parameter listener) | **Good for our tests**: reference signals for `tools render` and DSP tests; to be rewritten with a seedable generator. |
 
-Plugins originaux pas encore convertis (README) : Combo, De-ess, DubDelay, Leslie, Looplex, Multiband, Re-Psycho!, Round Panner, SpecMeter, Talkbox, Thru-Zero Flanger, Tracker, Vocoder, VocInput.
+Original plugins not converted yet (README): Combo, De-ess, DubDelay, Leslie, Looplex, Multiband, Re-Psycho!, Round Panner, SpecMeter, Talkbox, Thru-Zero Flanger, Tracker, Vocoder, VocInput.
 
-## A3. Structure commune, qualité, maintenance
+## A3. Common structure, quality, maintenance
 
 ### Structure
 
-Chaque plugin est un dossier avec un `.jucer`, un `README.markdown` (paramètres) et deux fichiers : `Source/PluginProcessor.h` et `.cpp`. Pas d'éditeur : `GenericAudioProcessorEditor` partout. Le modèle, décrit dans le README racine (section "How the code is structured"), est le suivant :
+Each plugin is a folder with a `.jucer`, a `README.markdown` (parameters) and two files: `Source/PluginProcessor.h` and `.cpp`. No editor: `GenericAudioProcessorEditor` everywhere. The model, described in the root README (section "How the code is structured"), is as follows:
 
-1. `createParameterLayout()` déclare les paramètres APVTS en unités naturelles (dB, ms, Hz) avec `ParameterID{ "Nom", 1 }`.
-2. `prepareToPlay()` alloue les tampons puis appelle `resetState()`.
-3. `resetState()` remet à zéro l'état de rendu ; elle est aussi appelée par `reset()`.
-4. `update()` lit l'APVTS et calcule les paramètres "cuits" (membres préfixés `_`).
-5. `processBlock()` appelle `update()`, copie membres en locales, boucle sur les échantillons, recopie l'état.
+1. `createParameterLayout()` declares the APVTS parameters in natural units (dB, ms, Hz) with `ParameterID{ "Nom", 1 }`.
+2. `prepareToPlay()` allocates the buffers then calls `resetState()`.
+3. `resetState()` resets the rendering state; it is also called by `reset()`.
+4. `update()` reads the APVTS and computes the "cooked" parameters (members prefixed with `_`).
+5. `processBlock()` calls `update()`, copies members into locals, loops over the samples, and copies the state back.
 
-Exemple type : [`Delay/Source/PluginProcessor.cpp:76-271`](https://github.com/hollance/mda-plugins-juce/blob/552702479a9eac534f3abbf6e878a5eab473e0cb/Delay/Source/PluginProcessor.cpp#L76-L271).
+Typical example: [`Delay/Source/PluginProcessor.cpp:76-271`](https://github.com/hollance/mda-plugins-juce/blob/552702479a9eac534f3abbf6e878a5eab473e0cb/Delay/Source/PluginProcessor.cpp#L76-L271).
 
-Ce découpage `update()` / état / boucle est déjà presque notre `Params` + `process`. L'extraction consiste à déplacer l'état et la boucle dans une classe `dsp/` et à remplacer la lecture APVTS de `update()` par la lecture d'un snapshot.
+This `update()` / state / loop split is already almost our `Params` + `process`. Extraction consists of moving the state and the loop into a `dsp/` class and replacing the APVTS reading in `update()` with reading a snapshot.
 
-### Qualité
+### Quality
 
-| Aspect | Constat |
+| Aspect | Finding |
 | --- | --- |
-| Documentation | Excellente : chaque formule héritée est expliquée, avec les bugs corrigés (par exemple le facteur 2 retiré du dry de Delay, `Delay/Source/PluginProcessor.cpp:153-162`) et les doutes de l'auteur ("I didn't study this filter in detail"). |
-| Allocation | Faite dans `prepareToPlay` uniquement, aucune dans `processBlock` (recherche de `new`, `resize`, `push_back`). Ambience utilise `new[]`/`delete[]` nus (`Ambience/Source/PluginProcessor.cpp:44-57`). |
-| Lissage | Aucun : le README racine l'assume ("did not add any new features such as parameter dezippering"). Changements de paramètres audibles en escalier. |
-| Mise à jour des paramètres | `update()` est appelée à chaque bloc sans détection de changement (sauf TestTone), alors que le README dit "only when parameters have actually changed". Detune y recalcule une fenêtre de Hann jusqu'à 4096 points quand la latence change (`Detune/Source/PluginProcessor.cpp:106-116`). |
-| Aléatoire | `rand()`/`std::rand()` dans RezFilter, Dither, TestTone (boucle audio) et BeatBox (`prepareToPlay`). Contraire à notre règle `dsp.md`. |
-| Latence et queue | Aucun `setLatencySamples` (Detune en aurait besoin) ; `getTailLengthSeconds` renvoie 0 partout, y compris Delay et Ambience. |
-| Taux d'échantillonnage | Plusieurs plugins raisonnent en échantillons fixes (Ambience, Stereo) : le son change à 48 ou 96 kHz. |
-| Bus | Stéréo imposée en sortie ; le code lit toujours deux canaux d'entrée. |
-| Style | Style personnel (pas JUCE), C++17 simple, un `.cpp` monolithique par plugin. Pas de tests, pas de CI. |
-| Build | Projucer uniquement, exportateur Xcode macOS seul, chemins de modules relatifs `../../../../../JUCE/modules`. Testé par l'auteur "with Xcode on a Mac using JUCE 7". Aucun CMake : il faudra recâbler dans notre squelette Pamplejuce, ce qui est sans effort vu qu'on ne garde que le DSP. |
+| Documentation | Excellent: each inherited formula is explained, with the bugs fixed (for example the factor 2 removed from Delay's dry, `Delay/Source/PluginProcessor.cpp:153-162`) and the author's doubts ("I didn't study this filter in detail"). |
+| Allocation | Done in `prepareToPlay` only, none in `processBlock` (search for `new`, `resize`, `push_back`). Ambience uses bare `new[]`/`delete[]` (`Ambience/Source/PluginProcessor.cpp:44-57`). |
+| Smoothing | None: the root README owns it ("did not add any new features such as parameter dezippering"). Parameter changes are audible as steps. |
+| Parameter updates | `update()` is called on every block without change detection (except TestTone), although the README says "only when parameters have actually changed". Detune recomputes a Hann window of up to 4096 points there when the latency changes (`Detune/Source/PluginProcessor.cpp:106-116`). |
+| Randomness | `rand()`/`std::rand()` in RezFilter, Dither, TestTone (audio loop) and BeatBox (`prepareToPlay`). Contrary to our `dsp.md` rule. |
+| Latency and tail | No `setLatencySamples` (Detune would need it); `getTailLengthSeconds` returns 0 everywhere, including Delay and Ambience. |
+| Sample rate | Several plugins reason in fixed samples (Ambience, Stereo): the sound changes at 48 or 96 kHz. |
+| Buses | Stereo enforced at the output; the code always reads two input channels. |
+| Style | Personal style (not JUCE), plain C++17, one monolithic `.cpp` per plugin. No tests, no CI. |
+| Build | Projucer only, macOS Xcode exporter only, relative module paths `../../../../../JUCE/modules`. Tested by the author "with Xcode on a Mac using JUCE 7". No CMake: it will need rewiring into our Pamplejuce skeleton, which is effortless since we only keep the DSP. |
 
-### Activité
+### Activity
 
-Dernier commit le 2026-02-25 ("add dither plug-in"), précédent le 2025-12-15. Rythme lent mais régulier depuis 2021 (ajout d'un plugin tous les quelques mois). Seul auteur : Matthijs Hollemans. Le dépôt se présente comme de "l'archéologie de plugin" à but pédagogique, pas comme une bibliothèque : pas de version, pas de tag, on épingle un commit si on vendor.
+Last commit on 2026-02-25 ("add dither plug-in"), previous one on 2025-12-15. Slow but steady pace since 2021 (a plugin added every few months). Single author: Matthijs Hollemans. The repository presents itself as educational "plugin archaeology", not as a library: no version, no tag, so we pin a commit if we vendor it.
 
-## A4. Les plus utiles à reprendre
+## A4. The most useful to reuse
 
-Classés par intérêt pour un premier plugin, avec ce que JUCE ou une bibliothèque déjà retenue fait déjà (règle de choix de `docs/07_A_REPRENDRE.md`).
+Ranked by interest for a first plugin, with what JUCE or an already chosen library already does (selection rule in `docs/07_REUSE.md`).
 
-| Rang | Plugin | Pourquoi | Concurrent déjà retenu |
+| Rank | Plugin | Why | Already chosen alternative |
 | --- | --- | --- | --- |
-| 1 | JX10 | Synthé complet et commenté : oscillateurs band limités, SVF, enveloppes, voix, glide, découpage du bloc par événement MIDI. Le meilleur point de départ si on fait un synthé simple. | `gin_dsp` (BSD 3) a oscillateurs et ADSR, mais pas un synthé entier aussi lisible. |
-| 2 | TestTone | Signaux de test (sinus, bruits, balayages, impulsion) pour nos rendus de référence et nos tests DSP. | Rien de prêt dans la liste actuelle. |
-| 3 | Detune | Pitch shifter à faible coût, idéal pour un doubleur ou un chorus "multi effets". | chowdsp a un pitch shifter, mais en GPL. |
-| 4 | Dither | Étage de sortie propre (TPDF passe haut, noise shaping du second ordre). | Rien dans la liste actuelle. |
-| 5 | Image | Matrice M/S complète, quelques lignes. | `dsp::Panner` ne fait pas le M/S. |
-| 6 | Bandisto | Découpage 3 bandes reconstructible et waveshaper par bande. | `dsp::LinkwitzRileyFilter` pour le crossover si on veut plus raide. |
-| 7 | DX10 | Base FM deux opérateurs et polyphonie minimale. | Aucun synthé FM dans la liste actuelle. |
-| 8 | Delay, Overdrive, Dynamics, Limiter | Utiles comme lecture et comme référence de test, mais JUCE fournit `DelayLine`, `WaveShaper`, `Compressor`, `Limiter`, `NoiseGate` (règle de choix n°1). | `juce_dsp`, Airwindows (MIT) pour des saturations plus riches. |
-| 9 | SubSynth, Stereo, Degrade | À garder en réserve pour un plugin de basse, d'élargissement ou lo-fi. | Airwindows (MIT) couvre aussi ces terrains. |
+| 1 | JX10 | Complete, annotated synth: band limited oscillators, SVF, envelopes, voices, glide, block split per MIDI event. The best starting point if we build a simple synth. | `gin_dsp` (BSD 3) has oscillators and ADSR, but not a whole synth this readable. |
+| 2 | TestTone | Test signals (sine, noises, sweeps, impulse) for our reference renders and our DSP tests. | Nothing ready in the current list. |
+| 3 | Detune | Low cost pitch shifter, ideal for a doubler or a "multi effects" chorus. | chowdsp has a pitch shifter, but under GPL. |
+| 4 | Dither | Clean output stage (high pass TPDF, second order noise shaping). | Nothing in the current list. |
+| 5 | Image | Complete M/S matrix, a few lines. | `dsp::Panner` does not do M/S. |
+| 6 | Bandisto | Reconstructible 3-band split and per band waveshaper. | `dsp::LinkwitzRileyFilter` for the crossover if we want steeper slopes. |
+| 7 | DX10 | Two-operator FM basis and minimal polyphony. | No FM synth in the current list. |
+| 8 | Delay, Overdrive, Dynamics, Limiter | Useful as reading material and as a test reference, but JUCE provides `DelayLine`, `WaveShaper`, `Compressor`, `Limiter`, `NoiseGate` (selection rule no. 1). | `juce_dsp`, Airwindows (MIT) for richer saturations. |
+| 9 | SubSynth, Stereo, Degrade | Keep in reserve for a bass, widening or lo-fi plugin. | Airwindows (MIT) also covers these areas. |
 
-À ne pas reprendre comme DSP : RezFilter et le filtre d'Ambience (instabilité et dépendance au taux, de l'aveu même de l'auteur), Piano et EPiano tant qu'on ne fait pas de lecteur d'échantillons (5,6 Mo de données en en tête).
+Not to reuse as DSP: RezFilter and Ambience's filter (instability and sample rate dependence, as the author himself admits), Piano and EPiano as long as we do not build a sample player (5.6 MB of data in headers).
 
 ---
 
-# Partie B : Frequalizer
+# Part B: Frequalizer
 
 ## B1. Licence
 
-[`LICENSE.md`](https://github.com/ffAudio/Frequalizer/blob/c4b1b611c8d818107639c79f974bca6a414d672d/LICENSE.md) : **BSD 3-Clause**, "Copyright (c) 2018, Daniel Walz - Foleys Finest Audio UG". Les sources n'ont pas d'en tête de licence (seulement "Author: Daniel Walz" dans `Source/Analyser.h:6`) ; le fichier racine couvre tout.
+[`LICENSE.md`](https://github.com/ffAudio/Frequalizer/blob/c4b1b611c8d818107639c79f974bca6a414d672d/LICENSE.md): **BSD 3-Clause**, "Copyright (c) 2018, Daniel Walz - Foleys Finest Audio UG". The sources have no licence header (only "Author: Daniel Walz" in `Source/Analyser.h:6`); the root file covers everything.
 
-Réserve : `Resources/*.png` (logos Foleys Finest, Facebook, GitHub, LinkedIn) et `Source/SocialButtons.h` relèvent de l'image de marque. La clause 3 interdit d'utiliser le nom de l'auteur pour promouvoir un dérivé, et les logos tiers sont des marques. On ne reprend aucun de ces fichiers.
+Caveat: `Resources/*.png` (Foleys Finest, Facebook, GitHub, LinkedIn logos) and `Source/SocialButtons.h` belong to the brand identity. Clause 3 forbids using the author's name to promote a derivative, and the third party logos are trademarks. We take none of these files.
 
-## B2. Maintenance et version de JUCE
+## B2. Maintenance and JUCE version
 
-| Point | Constat |
+| Point | Finding |
 | --- | --- |
-| JUCE | Sous module `External/JUCE` épinglé sur `e6ec181`, commit "Updated JUCE to 6.1.2" (2021-11-11). |
-| Build | CMake 3.13 (`CMakeLists.txt:1`), `juce_add_plugin` avec VST3, plus AU sur macOS et AAX ou VST2 si les SDK sont fournis (`CMakeLists.txt:5-19`). Lie `juce_opengl`. |
-| CI | GitHub Actions macOS et Windows, signature, notarisation, InnoSetup (commits de janvier 2022). Linux retiré. |
-| Activité | Dernier commit 2022-01-16. Projet de démonstration de 2018, non maintenu. |
-| Taille | 1590 lignes dans `Source/` : `Analyser.h` 144, processeur 617 + 172, éditeur 438 + 124. |
+| JUCE | Submodule `External/JUCE` pinned on `e6ec181`, commit "Updated JUCE to 6.1.2" (2021-11-11). |
+| Build | CMake 3.13 (`CMakeLists.txt:1`), `juce_add_plugin` with VST3, plus AU on macOS and AAX or VST2 if the SDKs are provided (`CMakeLists.txt:5-19`). Links `juce_opengl`. |
+| CI | GitHub Actions macOS and Windows, signing, notarisation, InnoSetup (commits from January 2022). Linux removed. |
+| Activity | Last commit 2022-01-16. Demonstration project from 2018, not maintained. |
+| Size | 1590 lines in `Source/`: `Analyser.h` 144, processor 617 + 172, editor 438 + 124. |
 
-### Ce qui casse ou grince avec JUCE 8 et 9
+### What breaks or grates with JUCE 8 and 9
 
-Vérifié sur JUCE 9.0.4.
+Checked on JUCE 9.0.4.
 
-1. **Erreur de compilation** : `startThread (5)` (`Source/Analyser.h:56`). Depuis JUCE 7, `Thread::startThread` ne prend plus d'entier mais un `Thread::Priority` (`enum class`, `juce_Thread.h:65,286` de JUCE 9). Remplacer par `startThread (juce::Thread::Priority::low)` ou passer à un `TimeSliceThread`.
-2. **CMake** : JUCE 9 exige CMake 3.22 ; le `cmake_minimum_required(VERSION 3.13.0)` ne bloque pas mais n'est plus exact. Sans objet chez nous (squelette Pamplejuce).
-3. **Avertissements de dépréciation** (bloquants avec `-Werror`) : les constructeurs positionnels de `AudioParameterFloat`, `AudioParameterBool` et `AudioParameterChoice` avec label, catégorie et lambdas (`Source/FrequalizerProcessor.cpp:74-131`) sont marqués `[[deprecated ("Prefer the signature taking an Attributes argument")]]` dans JUCE 9 (`juce_AudioParameterFloat.h:97`).
-4. **IDs sans version** : IDs en `juce::String` nus, donc `ParameterID` de version 0 ; contraire à notre règle `juce.md` (version incrémentée à chaque ajout).
-5. **OpenGL** : l'éditeur attache un `OpenGLContext` au composant de plus haut niveau (`Source/FrequalizerEditor.cpp:44-46`). JUCE 9 passe à EGL sous Linux et OpenGL est déprécié par Apple ; JUCE 8 a un rendu Direct2D sous Windows. Inutile pour un tracé de 300 points : on retire OpenGL.
-6. Le reste de l'API utilisée (`IIR::Coefficients::make*`, `getMagnitudeForFrequencyArray`, `ProcessorChain`, `AbstractFifo`, `dsp::FFT`, `WindowingFunction`, `Graphics::setFont (float)`) existe toujours dans JUCE 9.
+1. **Compile error**: `startThread (5)` (`Source/Analyser.h:56`). Since JUCE 7, `Thread::startThread` no longer takes an integer but a `Thread::Priority` (`enum class`, `juce_Thread.h:65,286` in JUCE 9). Replace with `startThread (juce::Thread::Priority::low)` or switch to a `TimeSliceThread`.
+2. **CMake**: JUCE 9 requires CMake 3.22; the `cmake_minimum_required(VERSION 3.13.0)` does not block but is no longer accurate. Not applicable for us (Pamplejuce skeleton).
+3. **Deprecation warnings** (blocking with `-Werror`): the positional constructors of `AudioParameterFloat`, `AudioParameterBool` and `AudioParameterChoice` with label, category and lambdas (`Source/FrequalizerProcessor.cpp:74-131`) are marked `[[deprecated ("Prefer the signature taking an Attributes argument")]]` in JUCE 9 (`juce_AudioParameterFloat.h:97`).
+4. **Unversioned IDs**: IDs as bare `juce::String`, so `ParameterID` at version 0; contrary to our `juce.md` rule (version incremented on every addition).
+5. **OpenGL**: the editor attaches an `OpenGLContext` to the top level component (`Source/FrequalizerEditor.cpp:44-46`). JUCE 9 moves to EGL on Linux and OpenGL is deprecated by Apple; JUCE 8 has a Direct2D renderer on Windows. Useless for a 300-point plot: we remove OpenGL.
+6. The rest of the API used (`IIR::Coefficients::make*`, `getMagnitudeForFrequencyArray`, `ProcessorChain`, `AbstractFifo`, `dsp::FFT`, `WindowingFunction`, `Graphics::setFont (float)`) still exists in JUCE 9.
 
-## B3. L'analyseur FFT
+## B3. The FFT analyser
 
-Code : [`Source/Analyser.h`](https://github.com/ffAudio/Frequalizer/blob/c4b1b611c8d818107639c79f974bca6a414d672d/Source/Analyser.h), une classe template `Analyser<Type>` qui hérite de `juce::Thread`. Deux instances (entrée et sortie) dans le processeur (`Source/FrequalizerProcessor.h:168-169`).
+Code: [`Source/Analyser.h`](https://github.com/ffAudio/Frequalizer/blob/c4b1b611c8d818107639c79f974bca6a414d672d/Source/Analyser.h), a template class `Analyser<Type>` that inherits from `juce::Thread`. Two instances (input and output) in the processor (`Source/FrequalizerProcessor.h:168-169`).
 
-### Transport des données depuis le thread audio
+### Data transport from the audio thread
 
-1. `processBlock` appelle `inputAnalyser.addAudioData (buffer, ...)` avant le filtrage et `outputAnalyser.addAudioData` après, **seulement si `getActiveEditor() != nullptr`** (`Source/FrequalizerProcessor.cpp:290-302`).
-2. `addAudioData` (`Analyser.h:30-48`) écrit dans un `juce::AbstractFifo` (sans verrou, un producteur et un consommateur) adossé à un `AudioBuffer` mono. Les canaux sont **additionnés** sans division (somme, pas moyenne). Si la place manque, le bloc entier est **jeté**.
-3. Puis `waitForData.signal()` (`Analyser.h:47`) réveille le thread d'analyse. **Problème** : dans JUCE 9, `WaitableEvent` est un `std::mutex` plus `std::condition_variable` (`juce_WaitableEvent.h:145-146`) : `signal()` prend un verrou sur le thread audio. Contraire à `realtime-audio.md`.
-4. La taille de la FIFO vaut une seconde d'audio (`setupAnalyser (int (sampleRate), ...)`, `Source/FrequalizerProcessor.cpp:264-265`), et `setupAnalyser` redimensionne `audioFifo` et relance le thread à chaque `prepareToPlay` (`Analyser.h:50-57`). Si l'hôte rappelle `prepareToPlay` sans `releaseResources`, le tampon est redimensionné pendant que le thread le lit.
+1. `processBlock` calls `inputAnalyser.addAudioData (buffer, ...)` before filtering and `outputAnalyser.addAudioData` after, **only if `getActiveEditor() != nullptr`** (`Source/FrequalizerProcessor.cpp:290-302`).
+2. `addAudioData` (`Analyser.h:30-48`) writes into a `juce::AbstractFifo` (lock free, one producer and one consumer) backed by a mono `AudioBuffer`. The channels are **added** without division (sum, not average). If there is not enough room, the whole block is **dropped**.
+3. Then `waitForData.signal()` (`Analyser.h:47`) wakes the analysis thread. **Problem**: in JUCE 9, `WaitableEvent` is a `std::mutex` plus a `std::condition_variable` (`juce_WaitableEvent.h:145-146`): `signal()` takes a lock on the audio thread. Contrary to `realtime-audio.md`.
+4. The FIFO size is one second of audio (`setupAnalyser (int (sampleRate), ...)`, `Source/FrequalizerProcessor.cpp:264-265`), and `setupAnalyser` resizes `audioFifo` and restarts the thread on every `prepareToPlay` (`Analyser.h:50-57`). If the host calls `prepareToPlay` again without `releaseResources`, the buffer is resized while the thread reads it.
 
-### Calcul (thread de fond, priorité 5)
+### Computation (background thread, priority 5)
 
-1. Quand 4096 échantillons sont prêts (`dsp::FFT fft { 12 }`, `Analyser.h:131`), le thread les copie, puis appelle `finishedRead (n / 2)` (`Analyser.h:71`) : **recouvrement de 50 %**, saut de 2048 échantillons.
-2. **Fenêtrage** : Hann normalisée (`WindowingFunction ... hann, true`, `Analyser.h:132`).
-3. `performFrequencyOnlyForwardTransform` donne les magnitudes des 2048 premiers bins.
-4. **Lissage** : moyenne glissante sur 4 trames. `averager` a 5 canaux : le canal 0 tient la somme, les canaux 1 à 4 forment un anneau ; on retire la trame la plus ancienne, on écrit la nouvelle mise à l'échelle par `1 / (2048 × 4)`, on l'ajoute (`Analyser.h:76-80`). Aucune balistique attaque/relâche, aucun lissage en fréquence.
-5. Écriture protégée par un `CriticalSection` partagé avec le thread UI (`Analyser.h:76`), puis drapeau atomique `newDataAvailable`.
+1. When 4096 samples are ready (`dsp::FFT fft { 12 }`, `Analyser.h:131`), the thread copies them, then calls `finishedRead (n / 2)` (`Analyser.h:71`): **50 % overlap**, hop of 2048 samples.
+2. **Windowing**: normalised Hann (`WindowingFunction ... hann, true`, `Analyser.h:132`).
+3. `performFrequencyOnlyForwardTransform` gives the magnitudes of the first 2048 bins.
+4. **Smoothing**: moving average over 4 frames. `averager` has 5 channels: channel 0 holds the sum, channels 1 to 4 form a ring; the oldest frame is subtracted, the new one is written scaled by `1 / (2048 × 4)`, and added (`Analyser.h:76-80`). No attack/release ballistics, no frequency smoothing.
+5. Write protected by a `CriticalSection` shared with the UI thread (`Analyser.h:76`), then the atomic flag `newDataAvailable`.
 
-### Rendu
+### Rendering
 
-1. L'éditeur a un `Timer` à 30 Hz (`Source/FrequalizerEditor.cpp:50`) qui appelle `checkForNewAnalyserData()` et ne repeint la zone du graphe que si une trame est arrivée (`:158-162`).
-2. Dans `paint`, `createPath` (`Analyser.h:90-102`) construit un `juce::Path` sous le même verrou : un point par bin, abscisse `log2 (f / 20 Hz) / 10` (dix octaves à partir de 20 Hz), ordonnée en dB de −80 à 0 (`Analyser.h:113-124`). Le verrou est entre l'UI et le thread d'analyse, pas l'audio : acceptable.
-3. Deux tracés superposés (entrée en vert, sortie en rouge), trait de 1 px, sans remplissage (`Source/FrequalizerEditor.cpp:104-111`). Pas de décimation des bins aigus : environ 2048 segments par tracé, dont la majorité tassés dans la dernière octave.
+1. The editor has a 30 Hz `Timer` (`Source/FrequalizerEditor.cpp:50`) that calls `checkForNewAnalyserData()` and only repaints the graph area if a frame has arrived (`:158-162`).
+2. In `paint`, `createPath` (`Analyser.h:90-102`) builds a `juce::Path` under the same lock: one point per bin, x coordinate `log2 (f / 20 Hz) / 10` (ten octaves from 20 Hz), y coordinate in dB from −80 to 0 (`Analyser.h:113-124`). The lock is between the UI and the analysis thread, not the audio thread: acceptable.
+3. Two overlaid plots (input in green, output in red), 1 px stroke, no fill (`Source/FrequalizerEditor.cpp:104-111`). No decimation of the high bins: about 2048 segments per plot, most of them packed into the last octave.
 
-### Défauts relevés
+### Defects found
 
-1. Verrou sur le thread audio via `WaitableEvent::signal` (`Analyser.h:47`).
-2. Lecture de `getActiveEditor()` dans `processBlock` (`Source/FrequalizerProcessor.cpp:290,301`), contraire à `juce.md` ("Pas d'accès à l'éditeur depuis le processeur").
-3. `checkForNewData` fait `load` puis `store` au lieu de `exchange` (`Analyser.h:104-109`) : une trame peut être manquée, sans gravité.
-4. `newDataAvailable` n'a pas d'initialiseur explicite (`Analyser.h:141`) ; valeur initialisée en C++20, indéterminée avant.
+1. Lock on the audio thread through `WaitableEvent::signal` (`Analyser.h:47`).
+2. Reading `getActiveEditor()` in `processBlock` (`Source/FrequalizerProcessor.cpp:290,301`), contrary to `juce.md` ("No access to the editor from the processor").
+3. `checkForNewData` does `load` then `store` instead of `exchange` (`Analyser.h:104-109`): a frame can be missed, which is harmless.
+4. `newDataAvailable` has no explicit initialiser (`Analyser.h:141`); value initialised in C++20, indeterminate before.
 
-### La version évoluée : foleys_gui_magic
+### The evolved version: foleys_gui_magic
 
-Le même auteur a repris cet analyseur dans `foleys_gui_magic` (BSD 3, dernier commit 2026-08-15, déjà cité dans `07_A_REPRENDRE.md`), fichier `modules/foleys_gui_magic/Visualisers/foleys_MagicAnalyser.{h,cpp}`. Différences utiles :
+The same author reused this analyser in `foleys_gui_magic` (BSD 3, last commit 2026-08-15, already cited in `07_REUSE.md`), file `modules/foleys_gui_magic/Visualisers/foleys_MagicAnalyser.{h,cpp}`. Useful differences:
 
-1. Plus de `WaitableEvent` : le calcul est un `TimeSliceClient` sur un thread commun qui interroge la FIFO (`useTimeSlice`, `foleys_MagicAnalyser.cpp:159`). Le thread audio ne fait plus qu'écrire dans l'`AbstractFifo`.
-2. Lissage par balistique : montée instantanée, décroissance multiplicative de 0,8 par trame (`:181-193`), commentée `FIXME: calculate by fft size and sampleRate`.
-3. Choix du canal analysé, ou somme.
+1. No more `WaitableEvent`: the computation is a `TimeSliceClient` on a shared thread that polls the FIFO (`useTimeSlice`, `foleys_MagicAnalyser.cpp:159`). The audio thread now only writes into the `AbstractFifo`.
+2. Ballistic smoothing: instant rise, multiplicative decay of 0.8 per frame (`:181-193`), commented `FIXME: calculate by fft size and sampleRate`.
+3. Choice of the analysed channel, or sum.
 
-Bug relevé au passage : la boucle de somme utilise `audioFifo.getNumChannels()` (toujours 1) au lieu du nombre de canaux d'entrée (`foleys_MagicAnalyser.cpp:140`), puis divise par le nombre de canaux d'entrée : en stéréo, seul le canal gauche est analysé, atténué de moitié.
+Bug found along the way: the sum loop uses `audioFifo.getNumChannels()` (always 1) instead of the number of input channels (`foleys_MagicAnalyser.cpp:140`), then divides by the number of input channels: in stereo, only the left channel is analysed, attenuated by half.
 
-## B4. Les courbes de réponse de l'EQ et l'interaction
+## B4. The EQ response curves and interaction
 
-### Calcul des courbes
+### Computing the curves
 
-1. Six bandes fixes, chacune un `ProcessorDuplicator<IIR::Filter, IIR::Coefficients>` dans un `ProcessorChain` suivi d'un `dsp::Gain` (`Source/FrequalizerProcessor.h:160-162`). Douze types (`FilterType`, `:22-37`), tous des biquads ou premiers ordres des fabriques `IIR::Coefficients::make*` (`Source/FrequalizerProcessor.cpp:442-486`).
-2. Grille de 300 fréquences `20 × 2^(i/30)` : dix octaves, 30 points par octave (`Source/FrequalizerProcessor.cpp:156-160`).
-3. À chaque changement de paramètre, `updateBand` calcule la réponse de la bande avec `Coefficients::getMagnitudeForFrequencyArray` (`:506-508`), puis `updatePlots` multiplie les réponses des bandes actives (ou de la seule bande en solo) par le gain de sortie pour obtenir la courbe totale (`:516-532`), et `sendChangeMessage()` prévient l'éditeur.
+1. Six fixed bands, each a `ProcessorDuplicator<IIR::Filter, IIR::Coefficients>` in a `ProcessorChain` followed by a `dsp::Gain` (`Source/FrequalizerProcessor.h:160-162`). Twelve types (`FilterType`, `:22-37`), all biquads or first order filters from the `IIR::Coefficients::make*` factories (`Source/FrequalizerProcessor.cpp:442-486`).
+2. Grid of 300 frequencies `20 × 2^(i/30)`: ten octaves, 30 points per octave (`Source/FrequalizerProcessor.cpp:156-160`).
+3. On each parameter change, `updateBand` computes the band's response with `Coefficients::getMagnitudeForFrequencyArray` (`:506-508`), then `updatePlots` multiplies the responses of the active bands (or of the single soloed band) by the output gain to get the total curve (`:516-532`), and `sendChangeMessage()` notifies the editor.
 
-### Tracé
+### Plotting
 
-1. `createFrequencyPlot` (`Source/FrequalizerProcessor.cpp:550-559`) : x linéaire en indice (donc logarithmique en fréquence grâce à la grille), y = centre − `pixelsPerDouble × log2 (magnitude)`, soit une échelle linéaire en dB.
-2. `pixelsPerDouble = 2 × hauteur / decibelsToGain (24)` (`Source/FrequalizerEditor.cpp:266`) : l'échelle ±24 dB est approchée par une formule détournée, alors que les poignées utilisent un `jmap` exact en dB (`:294-302`). Les deux coïncident à peu près sans être identiques ; à unifier.
-3. Une courbe par bande en couleur (atténuée si inactive), plus la courbe totale en gris ; par bande, une ligne verticale et un point à (fréquence, gain) (`Source/FrequalizerEditor.cpp:113-127`). Grille de 10 octaves et repères à ±12 et ±24 dB (`:79-99`).
+1. `createFrequencyPlot` (`Source/FrequalizerProcessor.cpp:550-559`): x linear in index (so logarithmic in frequency thanks to the grid), y = centre − `pixelsPerDouble × log2 (magnitude)`, which is a linear dB scale.
+2. `pixelsPerDouble = 2 × height / decibelsToGain (24)` (`Source/FrequalizerEditor.cpp:266`): the ±24 dB scale is approximated by a roundabout formula, whereas the handles use an exact `jmap` in dB (`:294-302`). The two roughly coincide without being identical; they should be unified.
+3. One curve per band in colour (dimmed if inactive), plus the total curve in grey; per band, a vertical line and a dot at (frequency, gain) (`Source/FrequalizerEditor.cpp:113-127`). Grid of 10 octaves and markers at ±12 and ±24 dB (`:79-99`).
 
 ### Interaction
 
-1. `mouseMove` repère la bande dont l'abscisse est à moins de 4 px (`clickRadius`) du curseur ; si l'ordonnée l'est aussi, le glisser modifie aussi le gain (curseur quatre flèches), sinon seulement la fréquence (`Source/FrequalizerEditor.cpp:195-232`).
-2. `mouseDrag` convertit la position en fréquence (`20 × 2^(10 × pos)`) et en gain, puis appelle `Slider::setValue (..., sendNotification)` sur les potentiomètres de la bande (`:234-243`, `:418-426`) : le paramètre passe par l'attachment APVTS.
-3. Double clic : bascule "active" de la bande via `setValueNotifyingHost` (`:245-262`).
-4. Clic droit : menu des types de filtre (`:164-193`).
-5. Le panneau de chaque bande (`BandEditor`) a type, fréquence, Q, gain, solo et activation, grisés selon le type (`:367-411`).
+1. `mouseMove` finds the band whose x coordinate is within 4 px (`clickRadius`) of the cursor; if the y coordinate is too, dragging also changes the gain (four arrow cursor), otherwise only the frequency (`Source/FrequalizerEditor.cpp:195-232`).
+2. `mouseDrag` converts the position into frequency (`20 × 2^(10 × pos)`) and gain, then calls `Slider::setValue (..., sendNotification)` on the band's knobs (`:234-243`, `:418-426`): the parameter goes through the APVTS attachment.
+3. Double click: toggles the band's "active" state through `setValueNotifyingHost` (`:245-262`).
+4. Right click: filter type menu (`:164-193`).
+5. Each band's panel (`BandEditor`) has type, frequency, Q, gain, solo and activation, greyed out depending on the type (`:367-411`).
 
-### Défauts relevés
+### Defects found
 
-1. **Temps réel** : `parameterChanged` est appelé sur le thread qui modifie le paramètre, donc parfois le thread audio (automation). `updateBand` y alloue des `Coefficients` sur le tas (`Source/FrequalizerProcessor.cpp:445-486`), prend `getCallbackLock()` (`:492`), calcule 300 magnitudes et appelle `sendChangeMessage()` (`:531`), qui poste un message. Depuis l'UI, le même verrou bloque le thread audio.
-2. **Courses de données** : `bands[i].magnitudes`, `magnitudes` et les champs de `Band` sont écrits par le thread du paramètre et lus par `paint` sans synchronisation ; `setBandSolo` modifie les drapeaux de contournement du `ProcessorChain` depuis l'UI pendant que l'audio les lit (`:390-415`).
-3. **Gestes** : le glisser n'appelle pas `beginChangeGesture`/`endChangeGesture`. Comme le potentiomètre n'est pas lui même tenu, l'attachment traite chaque `setValue` comme un geste complet : l'hôte reçoit des dizaines de gestes par glisser (automation en écriture et undo de l'hôte pollués).
-4. **Test de clic faux** : dans `mouseDown`, la parenthèse est mal placée : `getPositionForFrequency (float (int (band->frequency)) * plotFrame.getWidth())` multiplie la fréquence par la largeur avant le logarithme (`Source/FrequalizerEditor.cpp:173`). Le menu contextuel ne s'ouvre presque jamais sur la bonne bande.
-5. **État** : pas de numéro de version ; `setStateInformation` affecte `state.state` directement et peut appeler `setSize` sur l'éditeur hors du thread message (`:585-600`) ; le solo n'est pas sauvé (acceptable, c'est un réglage de session).
-6. Aucun lissage des coefficients : changer un paramètre pendant la lecture remplace les coefficients d'un coup (clic possible sur les gros sauts de gain ou de fréquence).
+1. **Realtime**: `parameterChanged` is called on the thread that changes the parameter, so sometimes the audio thread (automation). `updateBand` allocates `Coefficients` on the heap there (`Source/FrequalizerProcessor.cpp:445-486`), takes `getCallbackLock()` (`:492`), computes 300 magnitudes and calls `sendChangeMessage()` (`:531`), which posts a message. From the UI, the same lock blocks the audio thread.
+2. **Data races**: `bands[i].magnitudes`, `magnitudes` and the fields of `Band` are written by the parameter's thread and read by `paint` without synchronisation; `setBandSolo` changes the `ProcessorChain` bypass flags from the UI while the audio thread reads them (`:390-415`).
+3. **Gestures**: dragging does not call `beginChangeGesture`/`endChangeGesture`. Since the knob itself is not held, the attachment treats each `setValue` as a complete gesture: the host receives dozens of gestures per drag (automation writing and host undo polluted).
+4. **Wrong hit test**: in `mouseDown`, the parenthesis is misplaced: `getPositionForFrequency (float (int (band->frequency)) * plotFrame.getWidth())` multiplies the frequency by the width before the logarithm (`Source/FrequalizerEditor.cpp:173`). The context menu almost never opens on the right band.
+5. **State**: no version number; `setStateInformation` assigns `state.state` directly and can call `setSize` on the editor outside the message thread (`:585-600`); solo is not saved (acceptable, it is a session setting).
+6. No coefficient smoothing: changing a parameter during playback replaces the coefficients at once (possible click on large gain or frequency jumps).
 
-## B5. Ce qu'on peut extraire
+## B5. What we can extract
 
-| Élément | Où | Ce qu'on garde | Ce qu'on change |
+| Item | Where | What we keep | What we change |
 | --- | --- | --- | --- |
-| Analyseur | `Source/Analyser.h` ou mieux `foleys_MagicAnalyser.*` | `AbstractFifo` mono, FFT 4096, Hann normalisée, recouvrement 50 %, mapping `binToY` et `indexToX` | Pas de `signal()` côté audio (sondage par timer ou `TimeSliceClient`), pas de `getActiveEditor()` (drapeau atomique "analyseur visible" écrit par l'éditeur), FIFO dimensionnée une fois pour le pire cas, moyenne des canaux, balistique dépendante du taux et de la taille de FFT, décimation des bins aigus. Mieux encore : un `farbot::fifo` ou `AbstractFifo` et un thread de fond qui produit un tableau de magnitudes, échangé avec l'UI par `farbot::RealtimeObject`. |
-| Courbe d'EQ | `Source/FrequalizerProcessor.cpp:156-160, 506-532, 550-559` | Grille log de fréquences, `getMagnitudeForFrequencyArray`, produit des réponses, tracé en dB | Calcul **dans l'UI** (thread message) à partir des valeurs de paramètres lues dans l'APVTS, jamais dans `parameterChanged`. Une seule fonction de mapping dB vers pixel. |
-| Interaction | `Source/FrequalizerEditor.cpp:195-302` | Détection de poignée, glisser fréquence/gain, double clic, menu contextuel, formules `getPositionForFrequency` et inverses | Gestes encadrés (`beginChangeGesture` au `mouseDown`, `endChangeGesture` au `mouseUp`), écriture directe des paramètres (`setValueNotifyingHost` sur la valeur normalisée) plutôt que par les potentiomètres, correction de la parenthèse de `:173`, rayon de clic mis à l'échelle (150 %, 200 %). |
-| Mise à jour des filtres côté audio | `Source/FrequalizerProcessor.cpp:442-514` | Liste des types et appels `make*` | Dans `processBlock` : snapshot `Params`, recalcul des coefficients seulement si changement, sans allocation (coefficients calculés en `std::array` dans `dsp/`, ou `IIR::ArrayCoefficients` qui renvoie un tableau par valeur), lissage. |
+| Analyser | `Source/Analyser.h` or better `foleys_MagicAnalyser.*` | Mono `AbstractFifo`, 4096 FFT, normalised Hann, 50 % overlap, `binToY` and `indexToX` mapping | No `signal()` on the audio side (polling by timer or `TimeSliceClient`), no `getActiveEditor()` (atomic "analyser visible" flag written by the editor), FIFO sized once for the worst case, average of the channels, ballistics depending on the rate and the FFT size, decimation of the high bins. Better still: a `farbot::fifo` or `AbstractFifo` and a background thread that produces an array of magnitudes, swapped with the UI through `farbot::RealtimeObject`. |
+| EQ curve | `Source/FrequalizerProcessor.cpp:156-160, 506-532, 550-559` | Log frequency grid, `getMagnitudeForFrequencyArray`, product of the responses, plot in dB | Computation **in the UI** (message thread) from the parameter values read in the APVTS, never in `parameterChanged`. A single dB to pixel mapping function. |
+| Interaction | `Source/FrequalizerEditor.cpp:195-302` | Handle detection, frequency/gain drag, double click, context menu, `getPositionForFrequency` formulas and their inverses | Gestures wrapped (`beginChangeGesture` on `mouseDown`, `endChangeGesture` on `mouseUp`), parameters written directly (`setValueNotifyingHost` on the normalised value) rather than through the knobs, the parenthesis at `:173` fixed, click radius scaled (150 %, 200 %). |
+| Filter updates on the audio side | `Source/FrequalizerProcessor.cpp:442-514` | List of types and `make*` calls | In `processBlock`: `Params` snapshot, coefficients recomputed only on change, without allocation (coefficients computed as `std::array` in `dsp/`, or `IIR::ArrayCoefficients`, which returns an array by value), smoothing. |
 
 ---
 
-# À reprendre
+# To reuse
 
-Rappel : MIT et BSD 3 sont compatibles avec les deux choix de licence de nos plugins. Toute reprise de code garde la notice d'origine et une ligne dans `docs/DEPENDENCIES.md` du projet.
+Reminder: MIT and BSD 3 are compatible with both licence choices for our plugins. Any code reuse keeps the original notice and a line in the project's `docs/DEPENDENCIES.md`.
 
-## 1. Code à extraire
+## 1. Code to extract
 
-| N° | Quoi | Source | Licence | Couche chez nous | Remarque |
+| No. | What | Source | Licence | Layer on our side | Remark |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Oscillateur scie band limité par intégration de sinc, SVF à saturation douce, enveloppes un pôle, gestion de 8 voix et découpage du bloc par événement MIDI | `JX10/Source/PluginProcessor.cpp` | MIT | `dsp/` (oscillateurs, filtre, enveloppes, voix) et `plugin/` (lecture du `MidiBuffer`) | Pour un synthé simple. Réécrit en TDD, coefficients dépendant du taux d'échantillonnage, lissage ajouté. |
-| 2 | Générateur de signaux de test (sinus, bruit blanc, bruit rose filtré, balayages log et lin, impulsion) | `TestTone/Source/PluginProcessor.cpp` | MIT | `tools/` et `tests/dsp/` | Pour `tools render` et les tests ; `rand()` remplacé par un générateur seedable. |
-| 3 | Pitch shifter à deux têtes et fenêtre de Hann | `Detune/Source/PluginProcessor.cpp:70-251` | MIT | `dsp/` | Latence déclarée par `plugin/` via `setLatencySamples` ; fenêtre précalculée pour toutes les tailles au `prepare`. |
-| 4 | Dither TPDF, TPDF passe haut, noise shaping du second ordre | `Dither/Source/PluginProcessor.cpp:67-220` | MIT | `dsp/` | Générateur seedable. |
-| 5 | Matrice M/S et réglages de largeur | `Image/Source/PluginProcessor.cpp:69-163` | MIT | `dsp/` | Gains lissés. |
-| 6 | Crossover 3 bandes un pôle reconstructible et waveshaper `x/(1 + d·|x|)` | `Bandisto/Source/PluginProcessor.cpp:69-223` | MIT | `dsp/` | Oversampling autour du waveshaper (règle `dsp.md`). |
-| 7 | FM deux opérateurs avec LFO récursif | `DX10/Source/PluginProcessor.cpp` | MIT | `dsp/` et `plugin/` | Si un synthé FM est au programme. |
-| 8 | Fonctions de mapping de l'analyseur et de la courbe (`indexToX`, `binToY`, `getPositionForFrequency`, `getFrequencyForPosition`, `getPositionForGain`, `getGainForPosition`) | `Source/Analyser.h:113-124`, `Source/FrequalizerEditor.cpp:284-302` | BSD 3 | `ui/` | Une seule implémentation partagée analyseur et courbe. |
-| 9 | Boucle d'analyse FFT (fenêtre, FFT, magnitudes, balistique) | `foleys_MagicAnalyser.cpp:159-197` (de préférence à `Source/Analyser.h:59-88`) | BSD 3 | `ui/` (thread de fond côté éditeur) avec l'écriture FIFO dans `plugin/` | Corriger la somme des canaux (`:140`) et le `FIXME` de la décroissance. |
-| 10 | Calcul de la courbe d'EQ (grille log, `getMagnitudeForFrequencyArray`, produit des bandes) | `Source/FrequalizerProcessor.cpp:156-160, 506-532` | BSD 3 | `ui/` | Exécuté sur le thread message à partir de l'APVTS. |
-| 11 | Interaction de glisser des bandes dans le graphe | `Source/FrequalizerEditor.cpp:164-262` | BSD 3 | `ui/` | Avec gestes encadrés et correction de `:173`. |
+| 1 | Band limited saw oscillator by sinc integration, SVF with soft saturation, one pole envelopes, 8-voice management and block split per MIDI event | `JX10/Source/PluginProcessor.cpp` | MIT | `dsp/` (oscillators, filter, envelopes, voices) and `plugin/` (reading the `MidiBuffer`) | For a simple synth. Rewritten with TDD, sample rate dependent coefficients, smoothing added. |
+| 2 | Test signal generator (sine, white noise, filtered pink noise, log and linear sweeps, impulse) | `TestTone/Source/PluginProcessor.cpp` | MIT | `tools/` and `tests/dsp/` | For `tools render` and the tests; `rand()` replaced with a seedable generator. |
+| 3 | Two-head pitch shifter with Hann window | `Detune/Source/PluginProcessor.cpp:70-251` | MIT | `dsp/` | Latency declared by `plugin/` through `setLatencySamples`; window precomputed for all sizes in `prepare`. |
+| 4 | TPDF dither, high pass TPDF, second order noise shaping | `Dither/Source/PluginProcessor.cpp:67-220` | MIT | `dsp/` | Seedable generator. |
+| 5 | M/S matrix and width controls | `Image/Source/PluginProcessor.cpp:69-163` | MIT | `dsp/` | Smoothed gains. |
+| 6 | Reconstructible one pole 3-band crossover and waveshaper `x/(1 + d·|x|)` | `Bandisto/Source/PluginProcessor.cpp:69-223` | MIT | `dsp/` | Oversampling around the waveshaper (`dsp.md` rule). |
+| 7 | Two-operator FM with recursive LFO | `DX10/Source/PluginProcessor.cpp` | MIT | `dsp/` and `plugin/` | If an FM synth is on the roadmap. |
+| 8 | Analyser and curve mapping functions (`indexToX`, `binToY`, `getPositionForFrequency`, `getFrequencyForPosition`, `getPositionForGain`, `getGainForPosition`) | `Source/Analyser.h:113-124`, `Source/FrequalizerEditor.cpp:284-302` | BSD 3 | `ui/` | A single implementation shared by the analyser and the curve. |
+| 9 | FFT analysis loop (window, FFT, magnitudes, ballistics) | `foleys_MagicAnalyser.cpp:159-197` (preferred to `Source/Analyser.h:59-88`) | BSD 3 | `ui/` (background thread on the editor side) with the FIFO write in `plugin/` | Fix the channel sum (`:140`) and the decay `FIXME`. |
+| 10 | EQ curve computation (log grid, `getMagnitudeForFrequencyArray`, product of the bands) | `Source/FrequalizerProcessor.cpp:156-160, 506-532` | BSD 3 | `ui/` | Run on the message thread from the APVTS. |
+| 11 | Band drag interaction in the graph | `Source/FrequalizerEditor.cpp:164-262` | BSD 3 | `ui/` | With wrapped gestures and the fix at `:173`. |
 
-## 2. Idées
+## 2. Ideas
 
-| N° | Idée | Vu dans | Licence | Couche chez nous |
+| No. | Idea | Seen in | Licence | Layer on our side |
 | --- | --- | --- | --- | --- |
-| 1 | Séparer paramètres "cuits" (`update()`) et état de rendu, copier en locales dans la boucle : c'est notre `Params` + état de la classe DSP. | mda, README racine | MIT | `plugin/` (snapshot) et `dsp/` |
-| 2 | Paramètres en unités naturelles avec skew plutôt que des formules sur 0..1. | mda, README racine ("Parameter calculations") | MIT | `plugin/` |
-| 3 | Taux de contrôle réduit (32 ou 100 échantillons) pour enveloppes, LFO et glide. Compatible avec nos paquets internes de 32 échantillons. | JX10, DX10 | MIT | `dsp/` |
-| 4 | Commentaire "how this works" en tête de chaque boucle DSP, avec doutes et bugs corrigés : notre règle "le pourquoi et la source" appliquée. | Tout mda | MIT | `dsp/` |
-| 5 | Analyseur entrée et sortie superposés sur la courbe d'EQ, repeint seulement quand une trame arrive. | Frequalizer | BSD 3 | `ui/` |
-| 6 | N'alimenter l'analyseur que si l'éditeur est visible, via un drapeau atomique écrit par l'éditeur (et non `getActiveEditor()`). | Frequalizer, corrigé | BSD 3 | `plugin/` et `ui/` |
-| 7 | Grisage des contrôles selon le type de filtre (`updateControls`). | Frequalizer `Source/FrequalizerEditor.cpp:367-411` | BSD 3 | `ui/` |
-| 8 | Solo de bande hors état sauvé (réglage de session), à lister dans "ce qui n'est pas dans les presets". | Frequalizer | BSD 3 | `plugin/` |
+| 1 | Separate "cooked" parameters (`update()`) from rendering state, copy into locals in the loop: this is our `Params` + the DSP class state. | mda, root README | MIT | `plugin/` (snapshot) and `dsp/` |
+| 2 | Parameters in natural units with skew rather than formulas over 0..1. | mda, root README ("Parameter calculations") | MIT | `plugin/` |
+| 3 | Reduced control rate (32 or 100 samples) for envelopes, LFO and glide. Compatible with our 32-sample internal chunks. | JX10, DX10 | MIT | `dsp/` |
+| 4 | A "how this works" comment at the top of each DSP loop, with doubts and fixed bugs: our "the why and the source" rule in practice. | All of mda | MIT | `dsp/` |
+| 5 | Input and output analyser overlaid on the EQ curve, repainted only when a frame arrives. | Frequalizer | BSD 3 | `ui/` |
+| 6 | Feed the analyser only if the editor is visible, through an atomic flag written by the editor (and not `getActiveEditor()`). | Frequalizer, fixed | BSD 3 | `plugin/` and `ui/` |
+| 7 | Greying out controls depending on the filter type (`updateControls`). | Frequalizer `Source/FrequalizerEditor.cpp:367-411` | BSD 3 | `ui/` |
+| 8 | Band solo outside the saved state (session setting), to be listed under "what is not in the presets". | Frequalizer | BSD 3 | `plugin/` |
 
-## 3. À éviter
+## 3. To avoid
 
-| N° | À éviter | Où | Licence | Couche concernée | Pourquoi |
+| No. | To avoid | Where | Licence | Layer concerned | Why |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `WaitableEvent::signal()` depuis `processBlock` | `Source/Analyser.h:47` | BSD 3 | `plugin/` | Verrou (`std::mutex`) sur le thread audio. |
-| 2 | `getActiveEditor()` dans `processBlock` | `Source/FrequalizerProcessor.cpp:290,301` | BSD 3 | `plugin/` | Accès à l'éditeur depuis le processeur, non thread safe. |
-| 3 | Recalcul des coefficients, allocation, `getCallbackLock()` et `sendChangeMessage()` dans `parameterChanged` | `Source/FrequalizerProcessor.cpp:335-365, 442-532` | BSD 3 | `plugin/` | Allocation et verrou possibles sur le thread audio, blocage de l'audio par l'UI. |
-| 4 | Glisser sans `begin/endChangeGesture` | `Source/FrequalizerEditor.cpp:234-243` | BSD 3 | `ui/` | Automation et undo de l'hôte pollués. |
-| 5 | `OpenGLContext` pour un tracé 2D simple | `Source/FrequalizerEditor.cpp:44-46` | BSD 3 | `ui/` | Inutile, déprécié sur macOS, dépendance EGL sous Linux avec JUCE 9. |
-| 6 | Logos, `SocialButtons.h`, noms "Frequalizer" et "Foleys Finest" | `Resources/`, `Source/SocialButtons.h` | BSD 3 (clause 3) et marques tierces | `ui/` | Image de marque d'autrui. |
-| 7 | `rand()` / `std::rand()` dans le DSP | `RezFilter/...:166,241`, `Dither/...:171,176`, `TestTone/...:313`, `BeatBox/...:112,144` | MIT | `dsp/` | Non seedable, non garanti temps réel ; règle `dsp.md`. |
-| 8 | Paramètres non lissés et `update()` complet à chaque bloc | Tout mda | MIT | `dsp/` et `plugin/` | Zipper noise ; coefficients à recalculer seulement sur changement (règle `dsp.md`). |
-| 9 | Longueurs de délai en échantillons fixes | `Ambience/...:105-111`, `Stereo/...:47-54` | MIT | `dsp/` | Son dépendant du taux d'échantillonnage. |
-| 10 | Latence et queue non déclarées | Detune (latence), Delay et Ambience (queue) | MIT | `plugin/` | Règle `juce.md` (`setLatencySamples`, `getTailLengthSeconds`). |
-| 11 | Filtres de RezFilter et SVF de Chamberlin non protégés près de Nyquist | `RezFilter/Source/PluginProcessor.cpp:178-186` | MIT | `dsp/` | Instables selon l'auteur ; prendre `juce::dsp::StateVariableTPTFilter` ou un SVF TPT. |
-| 12 | `new[]`/`delete[]` nus dans `prepareToPlay`/`releaseResources` | `Ambience/Source/PluginProcessor.cpp:44-57` | MIT | `dsp/` | Fuite si `prepareToPlay` est rappelé ; règle `cpp.md` (RAII). |
-| 13 | Projets `.jucer` | Tout mda | MIT | build | On reste sur CMake (Pamplejuce) ; on ne reprend que le DSP. |
+| 1 | `WaitableEvent::signal()` from `processBlock` | `Source/Analyser.h:47` | BSD 3 | `plugin/` | Lock (`std::mutex`) on the audio thread. |
+| 2 | `getActiveEditor()` in `processBlock` | `Source/FrequalizerProcessor.cpp:290,301` | BSD 3 | `plugin/` | Editor access from the processor, not thread safe. |
+| 3 | Coefficient recomputation, allocation, `getCallbackLock()` and `sendChangeMessage()` in `parameterChanged` | `Source/FrequalizerProcessor.cpp:335-365, 442-532` | BSD 3 | `plugin/` | Possible allocation and lock on the audio thread, audio blocked by the UI. |
+| 4 | Dragging without `begin/endChangeGesture` | `Source/FrequalizerEditor.cpp:234-243` | BSD 3 | `ui/` | Host automation and undo polluted. |
+| 5 | `OpenGLContext` for a simple 2D plot | `Source/FrequalizerEditor.cpp:44-46` | BSD 3 | `ui/` | Useless, deprecated on macOS, EGL dependency on Linux with JUCE 9. |
+| 6 | Logos, `SocialButtons.h`, the names "Frequalizer" and "Foleys Finest" | `Resources/`, `Source/SocialButtons.h` | BSD 3 (clause 3) and third party trademarks | `ui/` | Someone else's brand identity. |
+| 7 | `rand()` / `std::rand()` in the DSP | `RezFilter/...:166,241`, `Dither/...:171,176`, `TestTone/...:313`, `BeatBox/...:112,144` | MIT | `dsp/` | Not seedable, not guaranteed realtime safe; `dsp.md` rule. |
+| 8 | Unsmoothed parameters and a full `update()` on every block | All of mda | MIT | `dsp/` and `plugin/` | Zipper noise; coefficients to be recomputed only on change (`dsp.md` rule). |
+| 9 | Delay lengths in fixed samples | `Ambience/...:105-111`, `Stereo/...:47-54` | MIT | `dsp/` | Sound depends on the sample rate. |
+| 10 | Latency and tail not declared | Detune (latency), Delay and Ambience (tail) | MIT | `plugin/` | `juce.md` rule (`setLatencySamples`, `getTailLengthSeconds`). |
+| 11 | RezFilter filters and Chamberlin SVF not protected near Nyquist | `RezFilter/Source/PluginProcessor.cpp:178-186` | MIT | `dsp/` | Unstable according to the author; take `juce::dsp::StateVariableTPTFilter` or a TPT SVF. |
+| 12 | Bare `new[]`/`delete[]` in `prepareToPlay`/`releaseResources` | `Ambience/Source/PluginProcessor.cpp:44-57` | MIT | `dsp/` | Leak if `prepareToPlay` is called again; `cpp.md` rule (RAII). |
+| 13 | `.jucer` projects | All of mda | MIT | build | We stay on CMake (Pamplejuce); we only take the DSP. |
