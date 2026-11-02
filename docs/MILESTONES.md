@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-02 · MoodzFilter runs in Ableton Live
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/6
+
+For the first time the plugin runs in its target host: Maxime installed the VST3 from the CI installer, loaded it in Ableton Live on Windows and moved Gain out, which works. Task 0005 made CI green on Linux, Linux RealtimeSanitizer and Windows (run 41517663478). The phase 1 gate is not passed yet: a Live session still has to be saved and reloaded with the value kept.
+
 ## 2026-11-02 · MoodzFilter repo created, first green CI
 
 Project: MoodzFilter

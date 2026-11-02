@@ -32,8 +32,9 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 - [x] Separate the dsp, plugin, ui, tools targets · task 0002, dsp/ without JUCE, configure-time check, https://github.com/Wieedze/MoodzFilter/pull/2
 - [x] Smoothed gain alone, with TDD · task 0003, exact gain, NaN, block size, state, frozen IDs, https://github.com/Wieedze/MoodzFilter/pull/4
 - [x] tools render and compare, first golden reference · task 0004, render, compare and check, golden references approved by ear, https://github.com/Wieedze/MoodzFilter/pull/5
-- [~] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10, also [[clang::nonblocking]] (clang ≥ 20) and strict C++23 for PluginTests (gnu++23 inherited from Pamplejuce)
-- [ ] Load the VST3 in Ableton Live · phase 1 gate
+- [x] Green CI · Windows, Linux RealtimeSanitizer job, pluginval 10 · task 0005, [[clang::nonblocking]] under RTSan with a canary, strict C++23 everywhere, https://github.com/Wieedze/MoodzFilter/pull/6
+- [~] Gain out −∞ to +6 dB and generic editor · task 0006, ADR 0004
+- [~] Load the VST3 in Ableton Live (gate) · loaded and Gain out works 2026-11-02; save/reload pending
 
 ## p2 · Phase 2 · DSP core
 
