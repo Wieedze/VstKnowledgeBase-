@@ -1,69 +1,72 @@
-# CLAUDE.md — Routeur
+# CLAUDE.md — Router
 
-Ce fichier route vers les bonnes règles, docs et décisions selon la tâche. **Il ne contient aucune règle.** Les règles vivent dans `.claude/rules/`, les décisions dans `.claude/choices/`, les leçons dans `.claude/learning/`.
+This file routes to the right rules, docs and decisions for the task. **It contains no rules.** Rules live in `.claude/rules/`, decisions in `.claude/choices/`, lessons in `.claude/learning/`.
 
-Si tu veux ajouter une règle ici : ne le fais pas. Ajoute la dans le fichier de `.claude/rules/` qui correspond et mets à jour `.claude/rules/00-INDEX.md`.
+If you want to add a rule here: don't. Add it to the matching file in `.claude/rules/` and update `.claude/rules/00-INDEX.md`.
 
-## Ordre de lecture au début de chaque tâche
+## Reading order at the start of every task
 
-1. Ce fichier.
-2. `.claude/STATE.md` : où en est le projet, tâche en cours, défauts connus.
-3. Le fichier de tâche dans `docs/tasks/`. Lire ses sections `Hors périmètre` et `Definition of done`.
-4. `docs/SPEC.md` du plugin (dans un projet de plugin) ou `docs/00_RESUME.md` (dans ce playbook).
-5. `GLOSSARY.md` : utiliser ces termes dans le code, les tests et les messages.
-6. Les règles de `.claude/rules/` qui correspondent à la tâche (table ci dessous). Pas toutes.
-7. `.claude/choices/INDEX.md` pour les décisions qui touchent la zone.
-8. `.claude/learning/INDEX.md` pour les post mortems de tâches proches.
+1. This file.
+2. `.claude/STATE.md`: where the project stands, current task, known defects.
+3. The task file in `docs/tasks/`. Read its `Out of scope` and `Definition of done` sections.
+4. The plugin's `docs/SPEC.md` (in a plugin project) or `docs/00_SUMMARY.md` (in this playbook).
+5. `GLOSSARY.md`: use these terms in code, tests and messages.
+6. The rules in `.claude/rules/` that match the task (table below). Not all of them.
+7. `.claude/choices/INDEX.md` for decisions that touch the area.
+8. `.claude/learning/INDEX.md` for post-mortems of similar tasks.
 
-## Table de routage
+## Routing table
 
-| Si la tâche touche… | Règles | Skills | Agent de revue |
+| If the task touches… | Rules | Skills | Review agent |
 | --- | --- | --- | --- |
-| DSP pur (`dsp/`) | `realtime-audio.md`, `cpp.md`, `dsp.md`, `testing.md` | `tdd` | `rt-safety-reviewer` |
-| Couche plugin JUCE (`plugin/`) : paramètres, état, processBlock | `realtime-audio.md`, `cpp.md`, `juce.md`, `testing.md` | `tdd` | `rt-safety-reviewer` |
+| Pure DSP (`dsp/`) | `realtime-audio.md`, `cpp.md`, `dsp.md`, `testing.md` | `tdd` | `rt-safety-reviewer` |
+| JUCE plugin layer (`plugin/`): parameters, state, processBlock | `realtime-audio.md`, `cpp.md`, `juce.md`, `testing.md` | `tdd` | `rt-safety-reviewer` |
 | UI (`ui/`) | `cpp.md`, `juce.md`, `ui.md` | — | — |
 | CMake, CI, packaging | `build.md` | — | — |
-| Nouvelle fonctionnalité ou changement de périmètre | `scope.md` | `grill-with-docs`, `to-spec`, `to-tickets` | — |
+| New feature or scope change | `scope.md` | `grill-with-docs`, `to-spec`, `to-tickets` | — |
 | Bug | `testing.md` | `diagnosing-bugs` | — |
-| Toute tâche, à la fin | `workflow.md` | `code-review` | `task-verifier` (**obligatoire**) |
+| Any task, at the end | `workflow.md` | `code-review` | `task-verifier` (**mandatory**) |
 
-## Fin de tâche obligatoire
+## Mandatory end of task
 
-Chaque tâche se termine par l'agent `task-verifier` avant d'être déclarée finie. Il lit la tâche, les règles concernées et les livrables, lance les commandes de vérification, et rend pass ou fail.
+Every task ends with the `task-verifier` agent before it is declared finished. It reads the task, the relevant rules and the deliverables, runs the verification commands, and returns pass or fail.
 
-* **Pass** : il écrit un post mortem dans `.claude/learning/NNNN-slug.md` et met à jour `.claude/STATE.md`.
-* **Fail** : corriger la liste rendue et relancer. La tâche n'est pas finie.
+* **Pass**: it writes a post-mortem in `.claude/learning/NNNN-slug.md` and updates `.claude/STATE.md`.
+* **Fail**: fix the returned list and run it again. The task is not finished.
 
-Les commandes de vérification minimales sont dans `.claude/rules/workflow.md`.
+The minimal verification commands are in `.claude/rules/workflow.md`.
 
-## Contraintes dures (les seules qui vivent ici)
+## Hard constraints (the only ones that live here)
 
-* **Rien qui alloue, verrouille, fait des I/O ou peut lancer une exception sur le thread audio.** Détail : `.claude/rules/realtime-audio.md`.
-* **Pas de code DSP sans test qui le précède.** Détail : `.claude/rules/testing.md`.
-* **Pas d'extension silencieuse du périmètre.** Ce qui n'est pas dans la tâche va dans `FUTURE.md`. Détail : `.claude/rules/scope.md`.
-* **Pas d'ID de paramètre renommé ou supprimé après une release** : ça casse les sessions des utilisateurs. Détail : `.claude/rules/juce.md`.
-* **Pas de code copié d'un projet AGPL/GPL** sans décision explicite tracée en ADR.
+* **Nothing that allocates, locks, does I/O or can throw an exception on the audio thread.** Details: `.claude/rules/realtime-audio.md`.
+* **No DSP code without a test that comes before it.** Details: `.claude/rules/testing.md`.
+* **No silent scope extension.** Whatever is not in the task goes into `FUTURE.md`. Details: `.claude/rules/scope.md`.
+* **No parameter ID renamed or removed after a release**: it breaks users' sessions. Details: `.claude/rules/juce.md`.
+* **No code copied from an AGPL/GPL project** without an explicit decision recorded in an ADR.
 
-## Carte du repo
+## Repo map
 
 ```
-CLAUDE.md               ← tu es ici (routeur)
-GLOSSARY.md             vocabulaire partagé (convention Matt Pocock)
-FUTURE.md               demandé, volontairement pas construit
+CLAUDE.md               ← you are here (router)
+GLOSSARY.md             shared vocabulary (Matt Pocock convention)
+FUTURE.md               requested, deliberately not built
+site/                   index website (Bun + React + Vite), deployed to GitHub Pages
 docs/
-  00_RESUME.md          les décisions de base
-  01_REFERENCES.md      projets open source analysés
-  02_TOOLCHAIN.md       JUCE, CMake, compilateurs, licences
-  03_ARCHITECTURE.md    couches et arborescence
-  04_TESTS.md           stratégie de tests et CI
-  05_WORKFLOW_AGENTIQUE.md
-  06_PLAN_DEMARRAGE.md
-  07_A_REPRENDRE.md     ce qu'on récupère au lieu de le coder (à lire avant d'écrire un composant)
-  tasks/TEMPLATE.md     modèle de tâche atomique
+  00_SUMMARY.md         the base decisions
+  01_REFERENCES.md      open source projects analysed
+  02_TOOLCHAIN.md       JUCE, CMake, compilers, licences
+  03_ARCHITECTURE.md    layers and tree
+  04_TESTS.md           test strategy and CI
+  05_AGENTIC_WORKFLOW.md
+  06_START_PLAN.md
+  07_REUSE.md           what we take instead of coding it (read before writing a component)
+  MILESTONES.md         project milestones, newest first
+  tasks/TEMPLATE.md     atomic task template
+  plugins/moodzfilter/  SPEC.md, ROADMAP.md, choices/ (plugin ADRs)
 .claude/
-  STATE.md              état courant, maintenu à la main
-  rules/                règles par domaine (00-INDEX.md d'abord)
-  agents/               task-verifier, rt-safety-reviewer
-  choices/              ADR, append only
-  learning/             post mortems, append only
+  STATE.md              current state, maintained by hand
+  rules/                rules by domain (00-INDEX.md first)
+  agents/               task-verifier, rt-safety-reviewer, index-writer
+  choices/              ADRs, append only
+  learning/             post-mortems, append only
 ```

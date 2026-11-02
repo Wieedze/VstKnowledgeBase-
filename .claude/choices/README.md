@@ -1,7 +1,7 @@
-# Décisions (ADR)
+# Decisions (ADR)
 
-Append only. Une décision non évidente prise pendant une tâche (compromis, écart à l'approche évidente, choix d'architecture non prévu) donne un fichier `NNNN-slug.md` écrit depuis `TEMPLATE.md`.
+Append only. A non-obvious decision made during a task (trade-off, deviation from the obvious approach, unplanned architecture choice) produces a file `NNNN-slug.md` written from `TEMPLATE.md`.
 
-Pas d'ADR pour : un choix imposé par une règle existante, un détail de style, un renommage local.
+No ADR for: a choice imposed by an existing rule, a style detail, a local rename.
 
-Une ADR remplacée n'est pas supprimée : la nouvelle dit "remplace NNNN" et l'ancienne reçoit "remplacée par NNNN".
+A superseded ADR is not deleted: the new one says "supersedes NNNN" and the old one gets "superseded by NNNN".

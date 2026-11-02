@@ -1,93 +1,93 @@
-# Projets de référence
+# Reference projects
 
-Analysés le 2026-11-02, d'abord à partir de leurs README, puis en lisant le code. Le tableau ci dessous a été corrigé après lecture du code ; l'étude détaillée est dans [`references/drum-foundry.md`](references/drum-foundry.md) et [`references/tetradrive.md`](references/tetradrive.md). Point clé : **seul TetraDrive teste son DSP sans JUCE.** C'est la première chose à copier.
+Analysed on 2026-11-02, first from their READMEs, then by reading the code. The table below was corrected after reading the code; the detailed study is in [`references/drum-foundry.md`](references/drum-foundry.md) and [`references/tetradrive.md`](references/tetradrive.md). Key point: **only TetraDrive tests its DSP without JUCE.** That is the first thing to copy.
 
-## Les deux projets de départ
+## The two starting projects
 
 | | [Drum Foundry](https://github.com/donjmilligan/drum-foundary) | [TetraDrive](https://github.com/dadda123/TetraDrive) |
 | --- | --- | --- |
-| Type | Instrument : synthé de kick et snare par couches, courbes dessinées sur la forme d'onde | Effet : distorsion multibande 4 bandes, émulation d'une unité des années 2000 |
-| JUCE | 8.0.15 dans `libs/JUCE`, téléchargé par CMake si le dossier est vide | 9.0.4 vendored dans `external/JUCE`, avec un patch VST3 |
-| Build | CMake + Ninja, option `DRUMFOUNDRY_BUILD_TOOLS` | CMake, générateurs Visual Studio ou Xcode |
-| Formats | VST3, AU, Standalone (macOS) ; VST3, Standalone (Windows) | VST3 (Windows) ; VST3, AU (macOS) |
-| DSP séparé de JUCE | Non : 33 des 37 fichiers de `src/dsp` utilisent JUCE | Oui : `src/` compile sans JUCE |
-| Tests | Binaire `DrumFoundryTools check` (NaN, round trip d'état, taille de bloc, undo, clipper), pas de ctest | `tests/` headless, activés par `-DTD_BUILD_TESTS=ON`, sans dépendance JUCE |
-| Validation | pluginval strictness 10 et `auval` en commandes **manuelles** (README), pas en CI | Aucune |
-| Versioning | Version dans `CMakeLists.txt` ; la CI échoue si le README ne correspond pas | Version lue dans le premier titre de `CHANGELOG.md` |
-| CI / release | GitHub Actions : un tag `vX.Y.Z` construit installeurs et release ; ni tests, ni pluginval, ni `tools check`, pas de Linux | **Aucune CI** |
+| Type | Instrument: layered kick and snare synth, curves drawn on the waveform | Effect: 4-band multiband distortion, emulation of a 2000s unit |
+| JUCE | 8.0.15 in `libs/JUCE`, downloaded by CMake if the folder is empty | 9.0.4 vendored in `external/JUCE`, with a VST3 patch |
+| Build | CMake + Ninja, `DRUMFOUNDRY_BUILD_TOOLS` option | CMake, Visual Studio or Xcode generators |
+| Formats | VST3, AU, Standalone (macOS); VST3, Standalone (Windows) | VST3 (Windows); VST3, AU (macOS) |
+| DSP separated from JUCE | No: 33 of the 37 files in `src/dsp` use JUCE | Yes: `src/` compiles without JUCE |
+| Tests | `DrumFoundryTools check` binary (NaN, state round trip, block size, undo, clipper), no ctest | Headless `tests/`, enabled by `-DTD_BUILD_TESTS=ON`, no JUCE dependency |
+| Validation | pluginval strictness 10 and `auval` as **manual** commands (README), not in CI | None |
+| Versioning | Version in `CMakeLists.txt`; CI fails if the README does not match | Version read from the first heading of `CHANGELOG.md` |
+| CI / release | GitHub Actions: a `vX.Y.Z` tag builds installers and the release; no tests, no pluginval, no `tools check`, no Linux | **No CI** |
 | Licence | AGPL v3 + NOTICE | AGPL v3 |
 
-### À reprendre de Drum Foundry
+### To take from Drum Foundry
 
-1. **Un binaire d'outils dev qui fait tourner le vrai moteur sans DAW.** Sous commandes `render` (WAV + PNG de spectrogramme par preset), `check` (batterie de vérifications), `bench` (coût CPU temps réel), `snapshot` (capture d'écran de l'éditeur). C'est exactement ce dont un agent a besoin pour vérifier son travail.
-2. **Un snapshot de paramètres par bloc.** `DrumParams` est une copie simple que le DSP lit à chaque bloc ; le DSP ne lit jamais l'arbre de paramètres JUCE directement.
-3. **Zéro blocage sur le thread audio.** Les éditions d'enveloppe passent par un `try_lock` (l'audio n'attend jamais) ; les samples sont décodés en arrière plan puis livrés sans blocage ; la réverbe "Natural" reconstruit sa réponse impulsionnelle sur un thread de fond puis fait un crossfade.
-4. **Latence fixe et déclarée**, identique quel que soit l'ordre de la chaîne d'effets ou le mode de sortie.
-5. **Traitement par paquets fixes de 32 échantillons**, mais seulement dans la réverbe Cloud (FIFO interne). Les LFO partent du début de chaque bloc hôte et dépendent donc encore de la taille de bloc ; leur test ne route aucun LFO.
-6. **Changement d'ordre de la chaîne sans clic** : fondu de sortie de 10 ms, silence, reset des modules, fondu d'entrée de 10 ms.
-7. **Undo par gestes utilisateur** : l'automation et le rappel de session par l'hôte ne créent pas d'étape d'undo, ils déplacent la base.
-8. **Une carte du code dans le README** : tableau chemin → rôle. Très utile pour un agent qui découvre le repo.
-9. **Sources DSP citées** (Giannoulis, Massberg et Reiss, JAES 2012 pour les compresseurs ; RBJ cookbook ; filtres de Vicanek) et mention qu'aucun code tiers n'a été copié.
-10. **Code vendored documenté** : `libs/CloudSeedCore/PATCHES.md` liste les patchs appliqués (modulation déterministe, pas d'allocation sur changement de paramètre).
+1. **A dev tools binary that runs the real engine without a DAW.** Subcommands `render` (WAV + spectrogram PNG per preset), `check` (battery of checks), `bench` (real-time CPU cost), `snapshot` (screenshot of the editor). This is exactly what an agent needs to verify its work.
+2. **A parameter snapshot per block.** `DrumParams` is a plain copy the DSP reads at each block; the DSP never reads the JUCE parameter tree directly.
+3. **Zero blocking on the audio thread.** Envelope edits go through a `try_lock` (audio never waits); samples are decoded in the background then delivered without blocking; the "Natural" reverb rebuilds its impulse response on a background thread then crossfades.
+4. **Fixed and declared latency**, identical whatever the order of the effects chain or the output mode.
+5. **Processing in fixed packets of 32 samples**, but only in the Cloud reverb (internal FIFO). The LFOs start at the beginning of each host block and therefore still depend on the block size; their test routes no LFO.
+6. **Click-free chain reordering**: 10 ms fade out, silence, module reset, 10 ms fade in.
+7. **Undo by user gesture**: automation and session recall by the host do not create an undo step, they move the baseline.
+8. **A code map in the README**: a path → role table. Very useful for an agent discovering the repo.
+9. **DSP sources cited** (Giannoulis, Massberg and Reiss, JAES 2012 for the compressors; RBJ cookbook; Vicanek filters) and a statement that no third-party code was copied.
+10. **Documented vendored code**: `libs/CloudSeedCore/PATCHES.md` lists the applied patches (deterministic modulation, no allocation on parameter change).
 
-### À reprendre de TetraDrive
+### To take from TetraDrive
 
-1. **Séparation physique `src/` (DSP pur) et `Source/` (JUCE + UI).** Le moteur compile et se teste sans JUCE.
-2. **Le patch JUCE pour l'automation sample accurate en VST3** : par défaut le wrapper VST3 de JUCE ne transmet que la dernière valeur d'automation par bloc. Le patch est versionné dans `patches/` et réappliqué à chaque mise à jour de JUCE.
-3. **Oversampling seulement autour des non linéarités** (les waveshapers), en demi bandes polyphases en cascade ; les filtres de crossover restent à la fréquence de l'hôte. Latence calculée (47, 55, 58 échantillons pour 2x, 4x, 8x) et rapportée à l'hôte.
-4. **Invariants sur les paramètres** : les crossovers restent ordonnés avec au moins 1/12 d'octave d'écart, l'automation ne peut pas inverser les bandes.
-5. **Compatibilité de session explicite** : les sessions d'avant 1.1.0 se rechargent en mode Classic, oversampling off. Chaque nouveau paramètre a une valeur de repli pour les anciens états.
-6. **Ce qui n'est pas dans les presets est listé** (Solo, Bypass, Oversampling).
-7. **CHANGELOG comme source unique de version**, affichée dans le binaire, les métadonnées VST3/AU et la page About.
+1. **Physical separation of `src/` (pure DSP) and `Source/` (JUCE + UI).** The engine compiles and is tested without JUCE.
+2. **The JUCE patch for sample-accurate automation in VST3**: by default JUCE's VST3 wrapper only passes the last automation value per block. The patch is versioned in `patches/` and reapplied at each JUCE update.
+3. **Oversampling only around the non-linearities** (the waveshapers), with cascaded polyphase half-band filters; the crossover filters stay at the host rate. Latency computed (47, 55, 58 samples for 2x, 4x, 8x) and reported to the host.
+4. **Parameter invariants**: the crossovers stay ordered with at least 1/12 octave between them, automation cannot swap the bands.
+5. **Explicit session compatibility**: sessions from before 1.1.0 reload in Classic mode, oversampling off. Each new parameter has a fallback value for old states.
+6. **What is not in presets is listed** (Solo, Bypass, Oversampling).
+7. **CHANGELOG as the single source of the version**, shown in the binary, the VST3/AU metadata and the About page.
 
-## Template recommandé
+## Recommended template
 
-[**Pamplejuce**](https://github.com/sudara/pamplejuce) (MIT, environ 750 étoiles). Au 2026-11-02 il fournit :
+[**Pamplejuce**](https://github.com/sudara/pamplejuce) (MIT, about 750 stars). As of 2026-11-02 it provides:
 
-* C++23, JUCE 9.x en sous module (branche develop), CPM, CMake ≥ 3.25 ;
-* Catch2 v3.8.1, une cible `Tests` et une cible `Benchmarks` ;
-* GitHub Actions : build et tests Linux, macOS, Windows, pluginval 1.x, signature et notarisation macOS, signature Windows via Azure Trusted Signing ;
-* `.clang-format`, `.gitignore` multiplateforme, fichier `VERSION` propagé dans JUCE ;
-* melatonin_inspector pour déboguer l'UI ;
-* un `CLAUDE.md` / `AGENTS.md` avec un assistant de configuration initiale.
+* C++23, JUCE 9.x as a submodule (develop branch), CPM, CMake ≥ 3.25;
+* Catch2 v3.8.1, a `Tests` target and a `Benchmarks` target;
+* GitHub Actions: build and tests on Linux, macOS, Windows, pluginval 1.x, macOS signing and notarisation, Windows signing via Azure Trusted Signing;
+* `.clang-format`, a cross-platform `.gitignore`, a `VERSION` file propagated into JUCE;
+* melatonin_inspector to debug the UI;
+* a `CLAUDE.md` / `AGENTS.md` with an initial setup assistant.
 
-Documentation : [melatonin.dev/manuals/pamplejuce](https://melatonin.dev/manuals/pamplejuce).
+Documentation: [melatonin.dev/manuals/pamplejuce](https://melatonin.dev/manuals/pamplejuce).
 
-## Autres projets à lire
+## Other projects to read
 
-Tous étudiés dans le code le 2026-11-02 ; licences vérifiées dans les fichiers. Le détail est dans la fiche liée.
+All studied in the code on 2026-11-02; licences checked in the files. Details are in the linked note.
 
-| Projet | Quoi | Licence vérifiée | Verdict | Fiche |
+| Project | What | Licence checked | Verdict | Note |
 | --- | --- | --- | --- | --- |
-| [Surge XT](https://github.com/surge-synthesizer/surge) et bibliothèques sst | Synthé hybride, très actif | Surge GPL v3 ; sst-cpputils, sst-plugininfra, sst-jucegui MIT ; sst-filters, waveshapers, effects GPL v3 | Les bibliothèques sst sont la meilleure source de DSP prêt à brancher. Surge lui même verrouille un mutex dans `process()` | [surge-et-sst](references/surge-et-sst.md) |
-| [Vital](https://github.com/mtytel/vital) | Synthé wavetable | GPL v3 ou ultérieure, noms protégés | Figé depuis avril 2022 (JUCE 6, Projucer, pas de CI). Une quinzaine d'idées, peu de code réutilisable | [vital](references/vital.md) |
-| [chowdsp_utils](https://github.com/Chowdhury-DSP/chowdsp_utils) | Modules JUCE | BSD 3 ou GPL v3 selon le module | Modules état et presets utiles, mais deux d'entre eux tirent un fichier GPL | [chowdsp-utils](references/chowdsp-utils.md) |
-| [Gin](https://github.com/FigBug/Gin) | Modules JUCE (plugin, DSP, UI) | BSD 3 | Matrice de modulation à rendre sûre en temps réel avant usage | [gin](references/gin.md) |
-| [BYOD](https://github.com/Chowdhury-DSP/BYOD) | Distorsion modulaire, 69 processeurs | GPL v3 ; dépendances chowdsp_wdf, RTNeural, math_approx en BSD 3 | Ses dépendances BSD et ses paramètres de redirection valent plus que le plugin | [byod-et-valentine](references/byod-et-valentine.md) |
-| [valentine](https://github.com/tote-bag-labs/valentine) | Compresseur | GPL v3 | Bonne CI (pluginval 10 sur 3 OS), DSP lié à JUCE, tests quasi vides | idem |
-| [Dexed](https://github.com/asb2m10/dexed) | Émulation DX7 | GPL v3, **moteur `msfa/` en Apache 2.0** | Le moteur FM est réutilisable même en plugin fermé | [dexed-obxd-odin2](references/dexed-obxd-odin2.md) |
-| [OB-Xf](https://github.com/surge-synthesizer/OB-Xf) (fork d'OB-Xd) | Analogique virtuel | GPL v3+ | **OB-Xd n'est plus open source** (source retiré en février 2026). OB-Xf est actif, 131 tests Catch2 en CI | idem |
-| [Odin 2](https://github.com/TheWaveWarden/odin2) | Synthé semi modulaire | GPL v3 | JUCE 6, pas de tests, alloue sur le thread audio : idées seulement | idem |
-| [mda-plugins-juce](https://github.com/hollance/mda-plugins-juce) | 24 plugins MDA réécrits | **MIT** | DSP presque sans JUCE, facile à extraire. Pas de lissage ni de latence déclarée | [mda-et-frequalizer](references/mda-et-frequalizer.md) |
-| [Frequalizer](https://github.com/ffAudio/Frequalizer) | EQ avec analyseur | BSD 3 (logos exclus) | Ne compile pas sur JUCE 9, abandonné en 2022. Prendre plutôt l'analyseur de foleys_gui_magic | idem |
+| [Surge XT](https://github.com/surge-synthesizer/surge) and the sst libraries | Hybrid synth, very active | Surge GPL v3; sst-cpputils, sst-plugininfra, sst-jucegui MIT; sst-filters, waveshapers, effects GPL v3 | The sst libraries are the best source of plug-in-ready DSP. Surge itself locks a mutex in `process()` | [surge-and-sst](references/surge-and-sst.md) |
+| [Vital](https://github.com/mtytel/vital) | Wavetable synth | GPL v3 or later, protected names | Frozen since April 2022 (JUCE 6, Projucer, no CI). About fifteen ideas, little reusable code | [vital](references/vital.md) |
+| [chowdsp_utils](https://github.com/Chowdhury-DSP/chowdsp_utils) | JUCE modules | BSD 3 or GPL v3 depending on the module | Useful state and preset modules, but two of them pull in a GPL file | [chowdsp-utils](references/chowdsp-utils.md) |
+| [Gin](https://github.com/FigBug/Gin) | JUCE modules (plugin, DSP, UI) | BSD 3 | Modulation matrix to make real-time safe before use | [gin](references/gin.md) |
+| [BYOD](https://github.com/Chowdhury-DSP/BYOD) | Modular distortion, 69 processors | GPL v3; dependencies chowdsp_wdf, RTNeural, math_approx under BSD 3 | Its BSD dependencies and its forwarding parameters are worth more than the plugin | [byod-and-valentine](references/byod-and-valentine.md) |
+| [valentine](https://github.com/tote-bag-labs/valentine) | Compressor | GPL v3 | Good CI (pluginval 10 on 3 OSes), DSP tied to JUCE, tests nearly empty | same |
+| [Dexed](https://github.com/asb2m10/dexed) | DX7 emulation | GPL v3, **`msfa/` engine under Apache 2.0** | The FM engine is reusable even in a closed plugin | [dexed-obxd-odin2](references/dexed-obxd-odin2.md) |
+| [OB-Xf](https://github.com/surge-synthesizer/OB-Xf) (fork of OB-Xd) | Virtual analogue | GPL v3+ | **OB-Xd is no longer open source** (source removed in February 2026). OB-Xf is active, 131 Catch2 tests in CI | same |
+| [Odin 2](https://github.com/TheWaveWarden/odin2) | Semi-modular synth | GPL v3 | JUCE 6, no tests, allocates on the audio thread: ideas only | same |
+| [mda-plugins-juce](https://github.com/hollance/mda-plugins-juce) | 24 MDA plugins rewritten | **MIT** | DSP almost free of JUCE, easy to extract. No smoothing and no declared latency | [mda-and-frequalizer](references/mda-and-frequalizer.md) |
+| [Frequalizer](https://github.com/ffAudio/Frequalizer) | EQ with analyser | BSD 3 (logos excluded) | Does not compile on JUCE 9, abandoned in 2022. Take the foleys_gui_magic analyser instead | same |
 
-Liste complète, tenue à jour : [awesome-juce](https://github.com/sudara/awesome-juce).
+Full list, kept up to date: [awesome-juce](https://github.com/sudara/awesome-juce).
 
-## Outils et modules
+## Tools and modules
 
-| Outil | Rôle |
+| Tool | Role |
 | --- | --- |
-| [pluginval](https://github.com/Tracktion/pluginval) | Valide le binaire comme un hôte : chargement, états, automation, tailles de bloc. Niveau 10 = le plus strict |
-| [melatonin_inspector](https://github.com/sudara/melatonin_inspector) | Inspecte et édite l'UI JUCE en direct |
-| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | Affiche un buffer audio en ASCII dans la console et les tests ; dépend de `juce_dsp`, donc seulement dans les tests de `plugin/` |
-| [melatonin_perfetto](https://github.com/sudara/melatonin_perfetto) | Profiling du thread audio avec Perfetto |
-| [DSP-Testbench](https://github.com/AndrewJJ/DSP-Testbench) | Banc de test DSP : sources, routage, analyse |
-| [juce-plugin-ci](https://github.com/maxwellpollack/juce-plugin-ci) | CI GitHub Actions plus légère que Pamplejuce |
+| [pluginval](https://github.com/Tracktion/pluginval) | Validates the binary like a host: loading, states, automation, block sizes. Level 10 = the strictest |
+| [melatonin_inspector](https://github.com/sudara/melatonin_inspector) | Inspects and edits the JUCE UI live |
+| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | Shows an audio buffer as ASCII in the console and in tests; depends on `juce_dsp`, so only in the `plugin/` tests |
+| [melatonin_perfetto](https://github.com/sudara/melatonin_perfetto) | Profiling the audio thread with Perfetto |
+| [DSP-Testbench](https://github.com/AndrewJJ/DSP-Testbench) | DSP test bench: sources, routing, analysis |
+| [juce-plugin-ci](https://github.com/maxwellpollack/juce-plugin-ci) | GitHub Actions CI lighter than Pamplejuce |
 
-## Lectures
+## Reading
 
 * [How to use CMake with JUCE](https://melatonin.dev/blog/how-to-use-cmake-with-juce/), Sudara.
-* [Real-time audio programming 101: time waits for nothing](http://www.rossbencina.com/code/real-time-audio-programming-101-time-waits-for-nothing), Ross Bencina. La référence sur les règles du thread audio.
+* [Real-time audio programming 101: time waits for nothing](http://www.rossbencina.com/code/real-time-audio-programming-101-time-waits-for-nothing), Ross Bencina. The reference on audio thread rules.
 * [Wait-free programming from scratch](https://jatinchowdhury18.medium.com/wait-free-programming-from-scratch-5ac6a65c23c4), Jatin Chowdhury.
-* Timur Doumler, talks CppCon/ADC sur le C++ temps réel et le pattern Read Copy Update.
+* Timur Doumler, CppCon/ADC talks on real-time C++ and the Read Copy Update pattern.
 * [Audio EQ Cookbook](https://www.w3.org/TR/audio-eq-cookbook/), Robert Bristow Johnson.

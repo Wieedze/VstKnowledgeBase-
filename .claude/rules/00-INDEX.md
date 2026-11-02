@@ -1,17 +1,17 @@
-# Index des règles
+# Rules index
 
-Charger seulement les fichiers qui correspondent à la tâche (table de routage dans `CLAUDE.md`).
+Load only the files that match the task (routing table in `CLAUDE.md`).
 
-| Fichier | Domaine | Charger quand |
+| File | Domain | Load when |
 | --- | --- | --- |
-| `realtime-audio.md` | Thread audio | `dsp/` ou `plugin/` touché |
-| `cpp.md` | C++ moderne, style | Tout code C++ |
-| `dsp.md` | Traitement du signal | `dsp/` touché |
-| `juce.md` | JUCE, paramètres, état | `plugin/` ou `ui/` touché |
-| `ui.md` | Éditeur, composants | `ui/` touché |
-| `testing.md` | Tests, golden, TDD | Toute tâche de code |
-| `build.md` | CMake, CI, packaging | Build ou CI touché |
-| `scope.md` | Périmètre, anti dérive | Toute nouvelle fonctionnalité |
-| `workflow.md` | Fin de tâche, vérification | Toute tâche, à la fin |
+| `realtime-audio.md` | Audio thread | `dsp/` or `plugin/` touched |
+| `cpp.md` | Modern C++, style | Any C++ code |
+| `dsp.md` | Signal processing | `dsp/` touched |
+| `juce.md` | JUCE, parameters, state | `plugin/` or `ui/` touched |
+| `ui.md` | Editor, components | `ui/` touched |
+| `testing.md` | Tests, golden, TDD | Any code task |
+| `build.md` | CMake, CI, packaging | Build or CI touched |
+| `scope.md` | Scope, anti drift | Any new feature |
+| `workflow.md` | End of task, verification | Any task, at the end |
 
-Changer une règle : éditer le fichier, écrire un ADR dans `.claude/choices/` qui dit pourquoi, et lier le post mortem s'il y en a un.
+Changing a rule: edit the file, write an ADR in `.claude/choices/` that says why, and link the post mortem if there is one.

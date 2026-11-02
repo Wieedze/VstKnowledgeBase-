@@ -1,170 +1,170 @@
-# TetraDrive : lecture du code
+# TetraDrive: code reading
 
-**Verdict.** Petit effet très lisible (environ 6 000 lignes hors JUCE) dont il faut reprendre trois idées précises : un moteur DSP en headers sans JUCE testé par un exécutable autonome, l'automation sample accurate découpée en segments avec rampes linéaires entre points, et une cascade d'oversampling dont la latence tombe sur un nombre entier d'échantillons ; il ne faut reprendre ni son JUCE copié en entier dans le dépôt, ni son absence totale de CI, ni son bypass qui ignore la latence d'oversampling.
+**Verdict.** A small, very readable effect (about 6,000 lines excluding JUCE) with three specific ideas worth reusing: a header-only DSP engine without JUCE tested by a standalone executable, sample-accurate automation split into segments with linear ramps between points, and an oversampling cascade whose latency lands on a whole number of samples. Do not copy its full in-repo copy of JUCE, its complete lack of CI, or its bypass that ignores the oversampling latency.
 
-Étudié au commit `b765b31` (1.1.1, 2026-10-18). Les numéros de ligne renvoient à ce commit ; les liens pointent sur `main` et peuvent dériver. Licence AGPL v3 : rien n'est copié ici, seules les idées sont décrites. Le code n'a pas été compilé pour cette analyse : tout ce qui suit vient de la lecture des sources.
+Studied at commit `b765b31` (1.1.1, 2026-10-18). Line numbers refer to that commit; links point to `main` and may drift. Licence: AGPL v3. Nothing is copied here; only the ideas are described. The code was not compiled for this analysis: everything below comes from reading the sources.
 
-## 1. Fiche
+## 1. Fact sheet
 
-| Point | Constat |
+| Item | Finding |
 | --- | --- |
-| Langage | C++17 ([`CMakeLists.txt:15`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L15)), CMake 3.22 minimum ([`CMakeLists.txt:1`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L1)) |
-| JUCE | 9.0.4, copié en entier dans `external/JUCE` (4 811 fichiers suivis par git, pas un sous module), patch déjà appliqué dans la copie |
-| Code propre au projet | `src/` : 4 headers DSP sans JUCE (1 310 lignes) ; `Source/` : processeur, presets, analyseur et UI JUCE |
-| Tests | Un seul exécutable, [`tests/EngineTest.cpp`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp), 5 tests |
-| CI | Aucune : pas de dossier `.github/` |
-| Formatage | Pas de `.clang-format` |
+| Language | C++17 ([`CMakeLists.txt:15`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L15)), CMake 3.22 minimum ([`CMakeLists.txt:1`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L1)) |
+| JUCE | 9.0.4, copied in full into `external/JUCE` (4,811 files tracked by git, not a submodule), patch already applied in the copy |
+| Project code | `src/`: 4 DSP headers without JUCE (1,310 lines); `Source/`: processor, presets, analyser and JUCE UI |
+| Tests | A single executable, [`tests/EngineTest.cpp`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp), 5 tests |
+| CI | None: no `.github/` folder |
+| Formatting | No `.clang-format` |
 
-## 2. Structure CMake
+## 2. CMake structure
 
-| Cible | Contenu | Dépend de JUCE |
+| Target | Contents | Depends on JUCE |
 | --- | --- | --- |
-| `TetraDrive` (`juce_add_plugin`) | `Source/*.cpp` ; inclut `src/` en headers ([`CMakeLists.txt:79-94`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L79-L94)) | Oui |
-| `TetraDriveData` | Ressources binaires, dont `CHANGELOG.md` lui même pour la page About ([`CMakeLists.txt:64-77`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L64-L77)) | Oui |
-| `td_engine_test` | `tests/EngineTest.cpp` + include de `src/`, rien d'autre ([`CMakeLists.txt:117-128`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L117-L128)) | **Non** |
+| `TetraDrive` (`juce_add_plugin`) | `Source/*.cpp`; includes `src/` as headers ([`CMakeLists.txt:79-94`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L79-L94)) | Yes |
+| `TetraDriveData` | Binary resources, including `CHANGELOG.md` itself for the About page ([`CMakeLists.txt:64-77`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L64-L77)) | Yes |
+| `td_engine_test` | `tests/EngineTest.cpp` + include of `src/`, nothing else ([`CMakeLists.txt:117-128`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L117-L128)) | **No** |
 
-Il n'y a pas de bibliothèque `dsp` au sens CMake : le DSP est entièrement en headers (`td_dsp.h`, `td_oversample.h`, `td_params.h`, `td_tables.h`), ce qui suffit pour que le test le compile seul. Le test active `-Wall -Wextra -Wconversion -Wsign-conversion` (ou `/W4`), plus strict que le plugin, qui se contente de `juce_recommended_warning_flags`. Les tests sont derrière l'option `TD_BUILD_TESTS`, **désactivée par défaut** ([`CMakeLists.txt:117`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L117)), et enregistrés avec un simple `add_test`.
+There is no `dsp` library in the CMake sense: the DSP is entirely header-only (`td_dsp.h`, `td_oversample.h`, `td_params.h`, `td_tables.h`), which is enough for the test to compile it alone. The test enables `-Wall -Wextra -Wconversion -Wsign-conversion` (or `/W4`), stricter than the plugin, which settles for `juce_recommended_warning_flags`. Tests sit behind the `TD_BUILD_TESTS` option, **off by default** ([`CMakeLists.txt:117`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L117)), and are registered with a plain `add_test`.
 
-La version vient du premier titre `## [x.y.z]` de `CHANGELOG.md`, lu par `file(STRINGS ... REGEX)` ; la configuration échoue s'il n'y en a pas, et `CMAKE_CONFIGURE_DEPENDS` relance la configuration quand le changelog change ([`CMakeLists.txt:3-13`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L3-L13), [`:26`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L26)). Le hash git court et la date sont injectés comme définitions ([`CMakeLists.txt:29-36`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L29-L36)). Le `.rc` Windows généré par JUCE est supprimé à la configuration pour forcer sa régénération quand la version change ([`CMakeLists.txt:60-62`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L60-L62)).
+The version comes from the first `## [x.y.z]` heading of `CHANGELOG.md`, read with `file(STRINGS ... REGEX)`; configuration fails if there is none, and `CMAKE_CONFIGURE_DEPENDS` reruns configuration when the changelog changes ([`CMakeLists.txt:3-13`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L3-L13), [`:26`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L26)). The short git hash and the date are injected as definitions ([`CMakeLists.txt:29-36`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L29-L36)). The Windows `.rc` generated by JUCE is deleted at configure time to force its regeneration when the version changes ([`CMakeLists.txt:60-62`](https://github.com/dadda123/TetraDrive/blob/main/CMakeLists.txt#L60-L62)).
 
-Le macro `TD_HEADLESS_TEST` testé dans [`Source/PluginProcessor.cpp:3`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L3) n'est défini par aucune cible : c'est un reste d'un test du processeur sans éditeur qui n'existe plus.
+The `TD_HEADLESS_TEST` macro tested in [`Source/PluginProcessor.cpp:3`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L3) is defined by no target: it is a leftover from an editor-less processor test that no longer exists.
 
 ## 3. Tests
 
-Framework maison : une fonction `check(bool, const char*)` qui imprime PASS/FAIL et incrémente un compteur, code de sortie 1 en cas d'échec ([`tests/EngineTest.cpp:11-16`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L11-L16)). Pas de Catch2. Les mesures se font par Goertzel sur une fréquence centrée sur un bin et un nombre entier de périodes ([`:21-32`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L21-L32)).
+Home-grown framework: a `check(bool, const char*)` function that prints PASS/FAIL and increments a counter, exit code 1 on failure ([`tests/EngineTest.cpp:11-16`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L11-L16)). No Catch2. Measurements use Goertzel on a bin-centred frequency over a whole number of periods ([`:21-32`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L21-L32)).
 
-| Test | Ce qu'il vérifie | Tolérance |
+| Test | What it checks | Tolerance |
 | --- | --- | --- |
-| `testResamplerTransparency` ([`:35-78`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L35-L78)) | Une impulsion qui monte puis redescend par 1, 2, 3 étages arrive exactement à la latence annoncée, gain DC unitaire, forme conservée | pic à l'échantillon exact ; DC à 1e-3 ; pic > 0,95, reste < 0,2 |
-| `testAliasing` ([`:82-125`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L82-L125)) | Sinus 5 kHz, +20 dB d'entrée, +24 dB de drive à 44,1 kHz : l'énergie aux 5 bins de repli connus baisse d'au moins 20 dB avec 2x, 4x, 8x ; fondamentale et H3 inchangées | ≥ 20 dB de réduction ; fondamentale < 1 dB ; H3 < 1,5 dB |
-| `testEngineLatency` ([`:129-166`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L129-L166)) | À bas niveau (shaper quasi linéaire), la sortie suréchantillonnée égale la sortie non suréchantillonnée décalée de `latencySamples()` | erreur relative < -50 dB |
-| `testHeat` ([`:170-212`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L170-L212)) | Le mètre de saturation est monotone avec le drive, ~0 pour une bande calme, indépendant du niveau de bande et quasi identique avec 4x | < 0,001 ; > 0,3 ; 1 dB ; 0,01 dB |
-| `testFlatCrossover` ([`:216-286`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L216-L286)) | La somme des 4 bandes LR4 égale les coupes basse et haute seules ; les voisines se croisent à -6,02 dB ; le chemin temporel du moteur suit la réponse analytique ; le mode Classic montre bien une ondulation | 0,01 dB ; 0,1 dB ; 0,05 dB ; > 0,5 dB |
+| `testResamplerTransparency` ([`:35-78`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L35-L78)) | An impulse that goes up then down through 1, 2, 3 stages arrives exactly at the reported latency, unity DC gain, shape preserved | peak at the exact sample; DC within 1e-3; peak > 0.95, rest < 0.2 |
+| `testAliasing` ([`:82-125`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L82-L125)) | 5 kHz sine, +20 dB input, +24 dB drive at 44.1 kHz: energy at the 5 known fold-back bins drops by at least 20 dB with 2x, 4x, 8x; fundamental and H3 unchanged | ≥ 20 dB reduction; fundamental < 1 dB; H3 < 1.5 dB |
+| `testEngineLatency` ([`:129-166`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L129-L166)) | At low level (near-linear shaper), the oversampled output equals the non-oversampled output shifted by `latencySamples()` | relative error < -50 dB |
+| `testHeat` ([`:170-212`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L170-L212)) | The saturation meter is monotonic with drive, ~0 for a quiet band, independent of band level and nearly identical with 4x | < 0.001; > 0.3; 1 dB; 0.01 dB |
+| `testFlatCrossover` ([`:216-286`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L216-L286)) | The sum of the 4 LR4 bands equals the low and high cuts alone; neighbours cross at -6.02 dB; the engine's time-domain path follows the analytical response; Classic mode does show a ripple | 0.01 dB; 0.1 dB; 0.05 dB; > 0.5 dB |
 
-Ce qui est bien : chaque attendu vient d'une propriété physique (retard pur, somme passe tout, repli spectral calculé) et non d'une réimplémentation ; les tolérances sont explicites ; un test vérifie que le signal de test produit bien le défaut qu'on veut voir disparaître ([`:116`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L116)). Ce qui manque : aucun test d'indépendance à la taille de bloc, aucun test du découpage sample accurate (il vit dans `Source/`, donc avec JUCE), aucun test d'état ni de presets, aucune référence audio.
+What is good: every expected value comes from a physical property (pure delay, all-pass sum, computed spectral fold-back) and not from a reimplementation; tolerances are explicit; one test checks that the test signal does produce the defect it wants to see disappear ([`:116`](https://github.com/dadda123/TetraDrive/blob/main/tests/EngineTest.cpp#L116)). What is missing: no block size independence test, no test of the sample-accurate splitting (it lives in `Source/`, so with JUCE), no state or preset test, no audio reference.
 
-## 4. Thread audio
+## 4. Audio thread
 
-### Des paramètres au DSP
+### From parameters to DSP
 
-Il n'y a **pas de struct snapshot** comme chez Drum Foundry. Le processeur garde un tableau `applied_` des dernières valeurs normalisées envoyées au moteur et, à chaque bloc, appelle `applyParam` uniquement pour ce qui a changé ([`Source/PluginProcessor.cpp:166-171`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166-L171)). `applyParam` convertit en valeur réelle et appelle un setter de cible du moteur (`setBandDriveTarget`, `setEdgeTargets`, etc.) avec une durée de rampe ([`:92-131`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L92-L131)). Les valeurs sont lues par `getValue()` des paramètres JUCE, qui est atomique.
+There is **no snapshot struct** as in Drum Foundry. The processor keeps an `applied_` array of the last normalised values sent to the engine and, on each block, calls `applyParam` only for what has changed ([`Source/PluginProcessor.cpp:166-171`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166-L171)). `applyParam` converts to the real value and calls an engine target setter (`setBandDriveTarget`, `setEdgeTargets`, etc.) with a ramp duration ([`:92-131`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L92-L131)). Values are read through `getValue()` on the JUCE parameters, which is atomic.
 
-Une spécification unique des paramètres, sans JUCE, vit dans [`src/td_params.h:16-74`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L16-L74) : id, nom, unité, plage, défaut, pas, échelle log, texte d'aide. Le processeur construit la mise en page APVTS à partir d'elle ([`Source/PluginProcessor.cpp:23-45`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L23-L45)) et vérifie par `jassert` que l'index JUCE de chaque paramètre égale son index dans l'enum ([`:55`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L55)). Formatage et parsing du texte affiché sont aussi sans JUCE ([`src/td_params.h:87-130`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L87-L130)).
+A single parameter specification without JUCE lives in [`src/td_params.h:16-74`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L16-L74): id, name, unit, range, default, step, log scale, help text. The processor builds the APVTS layout from it ([`Source/PluginProcessor.cpp:23-45`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L23-L45)) and checks with a `jassert` that the JUCE index of each parameter equals its index in the enum ([`:55`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L55)). Formatting and parsing of the displayed text are also JUCE-free ([`src/td_params.h:87-130`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L87-L130)).
 
-### Automation sample accurate
+### Sample-accurate automation
 
-1. Le wrapper VST3 patché appelle `addParameterPoint` pour chaque point de la file, avant `processBlock` ([`Source/PluginProcessor.cpp:83-86`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L83-L86)).
-2. Les points vont dans `SampleAccurateEvents`, un `std::array` de 4 096 événements (offset, index, valeur) sans allocation ; au delà, les points sont perdus ([`Source/SampleAccurateEvents.h:14-21`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L14-L21)).
-3. Tri par insertion stable au début du bloc ([`:24-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L24-L34)).
-4. Les paramètres sans points prennent leur valeur de début de bloc (cas de l'UI et de l'AU) ([`Source/PluginProcessor.cpp:166-171`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166-L171)).
-5. Chaque paramètre continu démarre une rampe du début de bloc jusqu'à son premier point ([`:173-180`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L173-L180)).
-6. Le bloc est découpé aux offsets des points ; à chaque offset, un paramètre discret (forme, solo, oversampling, mode de crossover, bypass) bascule, et un continu démarre une rampe vers son point suivant, d'une durée égale à l'écart entre les deux points ([`:182-207`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L182-L207)).
+1. The patched VST3 wrapper calls `addParameterPoint` for each point in the queue, before `processBlock` ([`Source/PluginProcessor.cpp:83-86`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L83-L86)).
+2. Points go into `SampleAccurateEvents`, a `std::array` of 4,096 events (offset, index, value) without allocation; beyond that, points are lost ([`Source/SampleAccurateEvents.h:14-21`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L14-L21)).
+3. Stable insertion sort at the start of the block ([`:24-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L24-L34)).
+4. Parameters without points take their start-of-block value (the UI and AU case) ([`Source/PluginProcessor.cpp:166-171`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166-L171)).
+5. Each continuous parameter starts a ramp from the start of the block to its first point ([`:173-180`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L173-L180)).
+6. The block is split at the point offsets; at each offset, a discrete parameter (shape, solo, oversampling, crossover mode, bypass) switches, and a continuous one starts a ramp to its next point, lasting the gap between the two points ([`:182-207`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L182-L207)).
 
-C'est une lecture correcte de la sémantique VST3 (les points décrivent des segments linéaires). Une rampe explicite ne descend pas sous 16 échantillons ([`src/td_dsp.h:506`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L506), [`:513-516`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L513-L516)).
+This is a correct reading of VST3 semantics (points describe linear segments). An explicit ramp never goes below 16 samples ([`src/td_dsp.h:506`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L506), [`:513-516`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L513-L516)).
 
-### Lissage
+### Smoothing
 
-Une seule primitive, `Ramp`, linéaire, qui retombe exactement sur la cible ([`src/td_dsp.h:247-275`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L247-L275)). Chaque bloc écrit les rampes dans des buffers par échantillon pré alloués, puis la boucle de traitement les lit.
+A single primitive, `Ramp`, linear, which lands exactly on the target ([`src/td_dsp.h:247-275`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L247-L275)). Each block writes the ramps into pre-allocated per-sample buffers, then the processing loop reads them.
 
-| Grandeur | Durée par défaut | Où |
+| Quantity | Default duration | Where |
 | --- | --- | --- |
-| Gains (entrée, sortie, drive, niveau de bande) | 20 ms, minimum 64 échantillons | [`src/td_dsp.h:502`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L502), [`:505`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L505) |
-| Changement de forme de waveshaper | crossfade entre les deux tables, 10 ms | [`:401-410`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L401-L410) |
-| Solo et bypass | crossfade des poids de bandes et du dry, 10 ms | [`:413-419`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L413-L419) |
-| Fréquences de coupure | 30 ms, interpolées en log2(Hz), coefficients recalculés tous les 16 échantillons pendant le glissement | [`:289`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L289), [`:422-437`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L422-L437), [`:459-474`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L459-L474), [`:543-558`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L543-L558) |
+| Gains (input, output, drive, band level) | 20 ms, minimum 64 samples | [`src/td_dsp.h:502`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L502), [`:505`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L505) |
+| Waveshaper shape change | crossfade between the two tables, 10 ms | [`:401-410`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L401-L410) |
+| Solo and bypass | crossfade of the band weights and of the dry signal, 10 ms | [`:413-419`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L413-L419) |
+| Cutoff frequencies | 30 ms, interpolated in log2(Hz), coefficients recomputed every 16 samples during the glide | [`:289`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L289), [`:422-437`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L422-L437), [`:459-474`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L459-L474), [`:543-558`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L543-L558) |
 
-L'invariant des crossovers est appliqué dans le moteur, pas dans le processeur : `setEdgeTargets` trie les 5 fréquences puis impose un écart minimal de 1/12 d'octave entre voisines ([`src/td_dsp.h:422-428`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L422-L428), constante en [`:290`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L290)). L'automation peut donc croiser deux crossovers sans inverser les bandes.
+The crossover invariant is enforced in the engine, not in the processor: `setEdgeTargets` sorts the 5 frequencies and then imposes a minimum gap of 1/12 octave between neighbours ([`src/td_dsp.h:422-428`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L422-L428), constant at [`:290`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L290)). Automation can therefore cross two crossovers without swapping the bands.
 
-### Dénormaux, mètres, analyseur, latence
+### Denormals, meters, analyser, latency
 
-1. `juce::ScopedNoDenormals` en tête de `processInternal` ([`Source/PluginProcessor.cpp:148`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L148)), et en plus remise à zéro des états IIR sous 1e-15 en fin de bloc ([`src/td_dsp.h:100-103`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L100-L103), [`:158`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L158)). Les filtres tournent en `double`.
-2. Mètres crête : un `std::atomic<float>` par mètre ; l'audio fait un max par `compare_exchange_weak`, l'UI lit et remet à zéro par `exchange` ([`Source/LiveMeters.h:8-18`](https://github.com/dadda123/TetraDrive/blob/main/Source/LiveMeters.h#L8-L18)).
-3. Analyseur : `juce::AbstractFifo` de 32 768 échantillons, rempli par l'audio, vidé et passé à la FFT par l'UI ([`Source/SpectrumAnalyzer.h:1`](https://github.com/dadda123/TetraDrive/blob/main/Source/SpectrumAnalyzer.h#L1), [`:47`](https://github.com/dadda123/TetraDrive/blob/main/Source/SpectrumAnalyzer.h#L47)).
-4. Le changement de facteur d'oversampling arrive sur le thread audio (c'est un paramètre automatable) ; la latence est annoncée à l'hôte depuis le message thread par un `AsyncUpdater` ([`Source/PluginProcessor.cpp:118-124`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L118-L124), [`Source/PluginProcessor.h:84`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.h#L84)).
-5. `Engine::reserve` alloue pour la taille de bloc annoncée (minimum 64) dans `prepareToPlay` ; un bloc plus grand est traité en morceaux de cette capacité ; si `prepare` n'a jamais été appelé, `process` alloue en secours ([`src/td_dsp.h:311-320`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L311-L320), [`:461`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L461)).
+1. `juce::ScopedNoDenormals` at the top of `processInternal` ([`Source/PluginProcessor.cpp:148`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L148)), plus IIR states below 1e-15 reset to zero at the end of the block ([`src/td_dsp.h:100-103`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L100-L103), [`:158`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L158)). The filters run in `double`.
+2. Peak meters: one `std::atomic<float>` per meter; the audio thread takes a max with `compare_exchange_weak`, the UI reads and resets with `exchange` ([`Source/LiveMeters.h:8-18`](https://github.com/dadda123/TetraDrive/blob/main/Source/LiveMeters.h#L8-L18)).
+3. Analyser: a 32,768-sample `juce::AbstractFifo`, filled by the audio thread, drained and passed to the FFT by the UI ([`Source/SpectrumAnalyzer.h:1`](https://github.com/dadda123/TetraDrive/blob/main/Source/SpectrumAnalyzer.h#L1), [`:47`](https://github.com/dadda123/TetraDrive/blob/main/Source/SpectrumAnalyzer.h#L47)).
+4. A change of oversampling factor arrives on the audio thread (it is an automatable parameter); the latency is reported to the host from the message thread through an `AsyncUpdater` ([`Source/PluginProcessor.cpp:118-124`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L118-L124), [`Source/PluginProcessor.h:84`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.h#L84)).
+5. `Engine::reserve` allocates for the announced block size (minimum 64) in `prepareToPlay`; a larger block is processed in pieces of that capacity; if `prepare` was never called, `process` allocates as a fallback ([`src/td_dsp.h:311-320`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L311-L320), [`:461`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L461)).
 
-Pas d'objet lourd échangé à chaud : les tables de waveshaper sont des constantes générées ([`src/td_tables.h`](https://github.com/dadda123/TetraDrive/blob/main/src/td_tables.h)), donc ni `try_lock` ni FIFO d'objets.
+No heavy object is swapped at runtime: the waveshaper tables are generated constants ([`src/td_tables.h`](https://github.com/dadda123/TetraDrive/blob/main/src/td_tables.h)), so there is neither `try_lock` nor an object FIFO.
 
-## 5. Oversampling et latence
+## 5. Oversampling and latency
 
-Implémentation maison dans [`src/td_oversample.h`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h) :
+Home-grown implementation in [`src/td_oversample.h`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h):
 
-1. Demi bande FIR symétrique de longueur 2L+1, fenêtre de Kaiser, ne stockant que les coefficients impairs ; les phases paires sont de simples retards ([`src/td_oversample.h:14-50`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L14-L50)). Coefficients normalisés pour un gain DC exactement unitaire.
-2. Trois étages en cascade : L = 47 (β = 8), puis 15 et 11 avec des L plus courts parce que les étages suivants ne protègent qu'une bande étroite ([`:117-124`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L117-L124)).
-3. **Astuce de latence entière** : chaque étage peut retarder sa sortie de `pad` échantillons pour que sa latence, ramenée à la fréquence de base, soit entière. Étage 1 : 47 ; étage 2 : (15 + 1) / 2 = 8 ; étage 3 : (11 + 1) / 4 = 3. D'où 47, 55, 58 échantillons pour 2x, 4x, 8x ([`:27-29`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L27-L29), [`:125-132`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L125-L132)).
-4. Seule la table de waveshaping tourne à la fréquence haute. Le drive (linéaire) est appliqué avant la montée et le niveau de bande après la descente ([`src/td_dsp.h:662-714`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L662-L714)). Les filtres de bande restent à la fréquence de l'hôte.
-5. Changer de facteur remet à zéro la mémoire des rééchantillonneurs, sans fondu ([`src/td_dsp.h:339-344`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L339-L344)). Le commentaire dit que c'est un choix de configuration, pas d'automation, mais le paramètre reste automatable.
+1. Symmetric half-band FIR of length 2L+1, Kaiser window, storing only the odd coefficients; the even phases are plain delays ([`src/td_oversample.h:14-50`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L14-L50)). Coefficients normalised for an exactly unity DC gain.
+2. Three cascaded stages: L = 47 (β = 8), then 15 and 11 with shorter L because the later stages only protect a narrow band ([`:117-124`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L117-L124)).
+3. **Integer latency trick**: each stage can delay its output by `pad` samples so that its latency, brought back to the base rate, is a whole number. Stage 1: 47; stage 2: (15 + 1) / 2 = 8; stage 3: (11 + 1) / 4 = 3. Hence 47, 55, 58 samples for 2x, 4x, 8x ([`:27-29`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L27-L29), [`:125-132`](https://github.com/dadda123/TetraDrive/blob/main/src/td_oversample.h#L125-L132)).
+4. Only the waveshaping table runs at the high rate. The (linear) drive is applied before upsampling and the band level after downsampling ([`src/td_dsp.h:662-714`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L662-L714)). The band filters stay at the host rate.
+5. Changing the factor resets the resamplers' memory, with no fade ([`src/td_dsp.h:339-344`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L339-L344)). The comment says it is a configuration choice, not automation, but the parameter remains automatable.
 
-La latence **change avec le réglage** (0, 47, 55, 58). C'est l'inverse de Drum Foundry, qui réserve le pire cas.
+The latency **changes with the setting** (0, 47, 55, 58). This is the opposite of Drum Foundry, which reserves the worst case.
 
-Pas de traitement par paquets fixes de 32 échantillons dans TetraDrive : seul le recalcul des coefficients pendant un glissement se fait par pas de 16.
+No fixed 32-sample chunk processing in TetraDrive: only the coefficient recalculation during a glide is done in steps of 16.
 
-## 6. Crossover Flat (Linkwitz-Riley)
+## 6. Flat crossover (Linkwitz-Riley)
 
-Le mode Flat écrit chaque bande comme un produit de filtres appliqués à l'entrée : LR4 passe bas ou passe haut aux crossovers qui la bornent, et un passe tout biquad aux crossovers qui ne la concernent pas, de façon que la somme des 4 bandes soit un passe tout pur. Les coupes basse et haute sont appliquées une seule fois avant la séparation ([`src/td_dsp.h:108-117`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L108-L117), [`:204-221`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L204-L221)). Les biquads sont ceux du cookbook RBJ en Butterworth ([`:131-147`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L131-L147)). La même fonction de conception sert au moteur et à l'affichage ([`:486-499`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L486-L499)), ce qui garantit que la courbe dessinée est celle qu'on entend. Changer de mode recalcule et vide l'état des filtres, sans fondu ([`:330-334`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L330-L334)).
+Flat mode writes each band as a product of filters applied to the input: LR4 low-pass or high-pass at the crossovers that bound it, and a biquad all-pass at the crossovers that do not concern it, so that the sum of the 4 bands is a pure all-pass. The low and high cuts are applied once before the split ([`src/td_dsp.h:108-117`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L108-L117), [`:204-221`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L204-L221)). The biquads are the RBJ cookbook Butterworth ones ([`:131-147`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L131-L147)). The same design function serves the engine and the display ([`:486-499`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L486-L499)), which guarantees that the drawn curve is the one you hear. Changing mode recomputes and clears the filter state, with no fade ([`:330-334`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L330-L334)).
 
-## 7. État, presets, migration
+## 7. State, presets, migration
 
-| Sujet | Comment | Où |
+| Topic | How | Where |
 | --- | --- | --- |
-| Format de session | XML de l'APVTS, plus un nœud `UI` (taille, réglages d'analyseur) et le nom du preset courant | [`Source/PluginProcessor.cpp:244-258`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L244-L258) |
-| Version | La version du plugin est écrite (`version`), mais **jamais relue** | même endroit |
-| Migration | Par présence : chaque paramètre absent de la session reçoit son défaut, sauf l'oversampling qui reçoit Off (0) au lieu de 2x pour qu'une session 1.0.0 ne gagne pas de latence | [`:277-286`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L277-L286) |
-| Crossover des anciennes sessions | Classic parce que c'est le défaut (index 0), pas par une règle de migration | [`src/td_params.h:72`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L72) |
-| Presets | Fichiers XML `.tdpreset` dans le dossier utilisateur ; valeurs stockées **en unités réelles** (Hz, dB) par id, donc robustes à un changement de plage ; valeur manquante = défaut | [`Source/PresetManager.cpp:61-96`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.cpp#L61-L96) |
-| Hors presets | Solo et Oversampling, déclarés par une fonction unique | [`Source/PresetManager.h:37-38`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.h#L37-L38) |
-| Version de preset | `formatVersion = 1` écrite pour de futures migrations, non lue aujourd'hui | [`Source/PresetManager.h:33-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.h#L33-L34) |
-| Version des paramètres JUCE | `ParameterID{id, 1}` pour tous, y compris ceux ajoutés en 1.1.0 | [`Source/PluginProcessor.cpp:27`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L27) |
-| Modifié ou non | Comparaison des valeurs réelles avec un instantané, tolérance de 1e-4 de la plage | [`Source/PresetManager.cpp:121-130`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.cpp#L121-L130) |
+| Session format | APVTS XML, plus a `UI` node (size, analyser settings) and the current preset name | [`Source/PluginProcessor.cpp:244-258`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L244-L258) |
+| Version | The plugin version is written (`version`), but **never read back** | same place |
+| Migration | By presence: each parameter missing from the session gets its default, except oversampling, which gets Off (0) instead of 2x so that a 1.0.0 session does not gain latency | [`:277-286`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L277-L286) |
+| Crossover of old sessions | Classic because it is the default (index 0), not through a migration rule | [`src/td_params.h:72`](https://github.com/dadda123/TetraDrive/blob/main/src/td_params.h#L72) |
+| Presets | `.tdpreset` XML files in the user folder; values stored **in real units** (Hz, dB) by id, hence robust to a range change; missing value = default | [`Source/PresetManager.cpp:61-96`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.cpp#L61-L96) |
+| Not in presets | Solo and Oversampling, declared by a single function | [`Source/PresetManager.h:37-38`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.h#L37-L38) |
+| Preset version | `formatVersion = 1` written for future migrations, not read today | [`Source/PresetManager.h:33-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.h#L33-L34) |
+| JUCE parameter version | `ParameterID{id, 1}` for all, including those added in 1.1.0 | [`Source/PluginProcessor.cpp:27`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L27) |
+| Modified or not | Real values compared with a snapshot, tolerance of 1e-4 of the range | [`Source/PresetManager.cpp:121-130`](https://github.com/dadda123/TetraDrive/blob/main/Source/PresetManager.cpp#L121-L130) |
 
 ## 8. CI
 
-Il n'y en a pas. Le README décrit une construction manuelle avec les générateurs Visual Studio et Xcode ; ni pluginval, ni tests automatisés, ni release sur tag.
+There is none. The README describes a manual build with the Visual Studio and Xcode generators; no pluginval, no automated tests, no release on tag.
 
-## 9. Le patch JUCE
+## 9. The JUCE patch
 
-Fichier : [`patches/juce-vst3-sample-accurate.patch`](https://github.com/dadda123/TetraDrive/blob/main/patches/juce-vst3-sample-accurate.patch), 59 lignes de diff, trois fichiers, environ 30 lignes ajoutées et aucune supprimée.
+File: [`patches/juce-vst3-sample-accurate.patch`](https://github.com/dadda123/TetraDrive/blob/main/patches/juce-vst3-sample-accurate.patch), 59 lines of diff, three files, about 30 lines added and none removed.
 
-| Fichier JUCE | Changement |
+| JUCE file | Change |
 | --- | --- |
-| `juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp`, dans `processParameterChanges` (ligne ~3533 de JUCE 9.0.4) | Dans la branche qui lit le dernier point de la file d'un paramètre, ajoute avant `setValueAndNotifyIfChanged` : si l'instance est un `SampleAccurateParameterSink` (par `dynamic_cast`), parcourir tous les points de la file et appeler `addParameterPoint(param, offset, valeur)`. Le comportement JUCE d'origine (fixer la valeur finale) est conservé. |
-| `juce_audio_processors_headless/juce_audio_processors_headless.h` | Une ligne d'include du nouveau header. |
-| `juce_audio_processors_headless/utilities/juce_SampleAccurateParameterSink.h` (nouveau) | Interface d'une méthode virtuelle `noexcept`, appelée sur le thread audio avant `processBlock`. |
+| `juce_audio_plugin_client/juce_audio_plugin_client_VST3.cpp`, in `processParameterChanges` (line ~3533 of JUCE 9.0.4) | In the branch that reads the last point of a parameter's queue, adds before `setValueAndNotifyIfChanged`: if the instance is a `SampleAccurateParameterSink` (via `dynamic_cast`), walk all the points in the queue and call `addParameterPoint(param, offset, value)`. The original JUCE behaviour (setting the final value) is kept. |
+| `juce_audio_processors_headless/juce_audio_processors_headless.h` | One include line for the new header. |
+| `juce_audio_processors_headless/utilities/juce_SampleAccurateParameterSink.h` (new) | Interface with one `noexcept` virtual method, called on the audio thread before `processBlock`. |
 
-Conséquences et risques à la mise à jour de JUCE :
+Consequences and risks when updating JUCE:
 
-1. Le patch touche une fonction interne du wrapper VST3 qui change souvent entre versions ; le contexte du diff (numéros de ligne, forme du lambda `getPointFromQueue`, garde `JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS`) devra être recalé à la main.
-2. Il dépend du module `juce_audio_processors_headless`, qui n'existe que dans le découpage de modules de JUCE 9 ; il ne s'applique pas tel quel à JUCE 8.
-3. Le comportement n'existe qu'en VST3. En AU, en Standalone et pour les changements venus de l'UI, le plugin retombe sur la valeur de début de bloc ([`Source/PluginProcessor.cpp:166`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166)). Les tests ne couvrent pas ce chemin.
-4. Le `dynamic_cast` est fait sur le thread audio pour chaque paramètre modifié de chaque bloc. C'est borné et peu coûteux, mais un pointeur mis en cache une fois serait plus propre.
-5. Comme JUCE est copié dans le dépôt avec le patch déjà appliqué, rien ne vérifie que `patches/` et `external/JUCE` restent cohérents ; le README demande seulement de faire `git apply` après une mise à jour.
+1. The patch touches an internal function of the VST3 wrapper that often changes between versions; the diff context (line numbers, shape of the `getPointFromQueue` lambda, the `JUCE_VST3_EMULATE_MIDI_CC_WITH_PARAMETERS` guard) will have to be realigned by hand.
+2. It depends on the `juce_audio_processors_headless` module, which only exists in the JUCE 9 module layout; it does not apply as is to JUCE 8.
+3. The behaviour only exists in VST3. In AU, in Standalone and for changes coming from the UI, the plugin falls back to the start-of-block value ([`Source/PluginProcessor.cpp:166`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L166)). The tests do not cover this path.
+4. The `dynamic_cast` runs on the audio thread for every modified parameter of every block. It is bounded and cheap, but a pointer cached once would be cleaner.
+5. Since JUCE is copied into the repo with the patch already applied, nothing checks that `patches/` and `external/JUCE` stay consistent; the README only asks to run `git apply` after an update.
 
-## 10. Points faibles, à ne pas reprendre
+## 10. Weak points, not to copy
 
-1. **Bypass non compensé en latence.** Le signal dry du bypass et du crossfade de routage est l'entrée non retardée ([`src/td_dsp.h:645-659`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L645-L659), [`:731-733`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L731-L733)), alors que la latence annoncée reste celle de l'oversampling. Avec 2x, le signal bypassé arrive donc 47 échantillons trop tôt après compensation de l'hôte, et le fondu de 10 ms mélange deux signaux décalés (filtrage en peigne pendant le fondu). `processBlockBypassed` passe par le même chemin ([`Source/PluginProcessor.cpp:143-145`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L143-L145)).
-2. **Latence variable et automatable.** Le facteur d'oversampling est un paramètre hôte, basculé à l'échantillon près, qui vide la mémoire des filtres (clic) et change la latence en cours de lecture.
-3. **Changement de mode de crossover sans fondu** ([`src/td_dsp.h:330-334`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L330-L334)).
-4. **Tri par insertion sur le thread audio** : borné, mais quadratique jusqu'à 4 096 événements dans le pire cas ([`Source/SampleAccurateEvents.h:24-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L24-L34)). Les files VST3 étant déjà triées par paramètre, une fusion de k listes triées suffirait.
-5. **Recalcul de coefficients coûteux** pendant un glissement de crossover : conception complète par transformée bilinéaire (tan, produits de polynômes) tous les 16 échantillons et pour plusieurs bandes. Acceptable ici, à mesurer chez nous.
-6. **JUCE copié en entier dans le dépôt**, sans sous module ni tag vérifiable.
-7. **Pas de CI, pas de pluginval, tests désactivés par défaut.**
-8. **Version d'état écrite mais jamais lue** ; la migration repose sur l'absence d'un paramètre, ce qui ne permet pas de corriger un changement de sens d'une valeur existante.
-9. **`ParameterID` toujours en version 1** alors que des paramètres ont été ajoutés en 1.1.0.
-10. Macro `TD_HEADLESS_TEST` morte.
+1. **Bypass not latency-compensated.** The dry signal of the bypass and of the routing crossfade is the undelayed input ([`src/td_dsp.h:645-659`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L645-L659), [`:731-733`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L731-L733)), while the reported latency remains that of the oversampling. With 2x, the bypassed signal therefore arrives 47 samples too early after host compensation, and the 10 ms fade mixes two offset signals (comb filtering during the fade). `processBlockBypassed` goes through the same path ([`Source/PluginProcessor.cpp:143-145`](https://github.com/dadda123/TetraDrive/blob/main/Source/PluginProcessor.cpp#L143-L145)).
+2. **Variable, automatable latency.** The oversampling factor is a host parameter, switched to the sample, which clears the filter memory (click) and changes the latency during playback.
+3. **Crossover mode change with no fade** ([`src/td_dsp.h:330-334`](https://github.com/dadda123/TetraDrive/blob/main/src/td_dsp.h#L330-L334)).
+4. **Insertion sort on the audio thread**: bounded, but quadratic up to 4,096 events in the worst case ([`Source/SampleAccurateEvents.h:24-34`](https://github.com/dadda123/TetraDrive/blob/main/Source/SampleAccurateEvents.h#L24-L34)). Since VST3 queues are already sorted per parameter, a merge of k sorted lists would be enough.
+5. **Costly coefficient recalculation** during a crossover glide: a full bilinear-transform design (tan, polynomial products) every 16 samples and for several bands. Acceptable here, to be measured on our side.
+6. **JUCE copied in full into the repo**, with no submodule and no verifiable tag.
+7. **No CI, no pluginval, tests off by default.**
+8. **State version written but never read**; migration relies on a parameter being absent, which cannot fix a change in meaning of an existing value.
+9. **`ParameterID` always at version 1** even though parameters were added in 1.1.0.
+10. Dead `TD_HEADLESS_TEST` macro.
 
-## À reprendre dans nos plugins
+## To reuse in our plugins
 
-1. **DSP en headers ou en bibliothèque sans JUCE, plus une spécification de paramètres sans JUCE.** Chez nous : cible `dsp` dans CMake, et un `ParamSpec` constexpr (id, plage, défaut, unité, texte) dans `dsp/` d'où `plugin/Parameters.cpp` génère la mise en page APVTS. Un test Catch2 fige la liste des ids et vérifie que l'index JUCE de chaque paramètre égale son index de spécification, comme le `jassert` de TetraDrive, mais en test.
-2. **Tests DSP par propriétés physiques.** Reprendre les quatre familles : impulsion qui ressort à la latence annoncée, sortie suréchantillonnée égale à la sortie simple décalée, repli spectral mesuré aux bins calculés, somme de crossover égale à un passe tout. Mesure par Goertzel ou par `juce::dsp::FFT` dans les tests de `plugin/` ; dans les tests de `dsp/`, une petite fonction Goertzel écrite en TDD.
-3. **Automation sample accurate par segments.** Si l'ADR ouvert dans `STATE.md` conclut qu'on en a besoin : un patch JUCE à nous dans `patches/`, avec une ligne d'explication, qui expose les points VST3 ; côté plugin, une liste d'événements de capacité fixe (`std::array`), une fusion des files déjà triées plutôt qu'un tri par insertion, un découpage du bloc aux offsets et des rampes linéaires entre points. Le pointeur vers l'interface puits est mis en cache à la construction. Un test de `plugin/` simule une file de points et vérifie la valeur à chaque offset.
-4. **Cascade d'oversampling à latence entière.** Utiliser `juce::dsp::Oversampling` avec `useIntegerLatency = true`, qui fait le même travail ; ne coder une cascade maison que si un benchmark le justifie. Garder l'idée de n'oversampler que la non linéarité, le gain linéaire appliqué avant la montée et après la descente.
-5. **Latence constante plutôt que variable.** Ne pas reprendre la latence variable de TetraDrive ; si le facteur d'oversampling est un réglage, compléter par une ligne à retard jusqu'à la latence du pire cas (idée de Drum Foundry) et rendre le paramètre non automatable (`AudioParameterChoiceAttributes().withAutomatable(false)`).
-6. **Bypass compensé.** Le chemin dry passe par une ligne à retard de la latence annoncée. Test : en bypass, la sortie égale l'entrée décalée de `getLatencySamples()`.
-7. **Invariants de paramètres dans le snapshot.** Tri puis écart minimum (1/12 d'octave) appliqués quand on remplit `Params`, avec un test qui envoie des crossovers croisés et vérifie l'ordre.
-8. **Glissement des fréquences en domaine logarithmique**, coefficients recalculés à intervalle fixe. JUCE `SmoothedValue<float, ValueSmoothingTypes::Multiplicative>` lisse déjà en log ; recalculer les coefficients tous les N échantillons, N fixé et documenté.
-9. **Crossover Linkwitz-Riley qui somme à plat.** `juce::dsp::LinkwitzRileyFilter` fournit passe bas, passe haut et passe tout du 4e ordre ; reprendre seulement le schéma (passe tout de compensation sur les crossovers qui ne bornent pas la bande, coupes appliquées avant la séparation) et le test de somme plate.
-10. **Une seule fonction de conception de filtre pour le DSP et l'affichage.** La courbe de l'UI appelle la même fonction que le moteur, jamais une copie.
-11. **Mètres et analyseur.** Crête par `std::atomic<float>` avec max par compare exchange et lecture par `exchange(0)` ; échantillons d'analyseur par `juce::AbstractFifo` ou `farbot::fifo`.
-12. **Presets en unités réelles par id**, valeur absente = défaut, liste unique de ce qui n'est pas dans les presets. Évaluer d'abord le module de presets de chowdsp_utils (BSD) avant d'écrire un gestionnaire.
-13. **Version tirée de `CHANGELOG.md`** par `file(STRINGS ... REGEX)` avec échec explicite et `CMAKE_CONFIGURE_DEPENDS`, et le changelog compilé en ressource binaire pour la page About.
-14. **Rampe qui retombe exactement sur la cible.** Si on écrit notre propre rampe, la tester sur ce point ; sinon `juce::SmoothedValue` le fait déjà.
+1. **DSP as headers or as a library without JUCE, plus a parameter specification without JUCE.** On our side: a `dsp` target in CMake, and a constexpr `ParamSpec` (id, range, default, unit, text) in `dsp/` from which `plugin/Parameters.cpp` generates the APVTS layout. A Catch2 test freezes the list of ids and checks that each parameter's JUCE index equals its specification index, like TetraDrive's `jassert`, but as a test.
+2. **DSP tests based on physical properties.** Reuse the four families: an impulse that comes out at the reported latency, oversampled output equal to the simple output shifted, spectral fold-back measured at computed bins, crossover sum equal to an all-pass. Measure with Goertzel or with `juce::dsp::FFT` in the `plugin/` tests; in the `dsp/` tests, a small Goertzel function written with TDD.
+3. **Sample-accurate automation by segments.** If the ADR open in `STATE.md` concludes that we need it: our own JUCE patch in `patches/`, with a one-line explanation, that exposes the VST3 points; on the plugin side, a fixed-capacity event list (`std::array`), a merge of the already sorted queues rather than an insertion sort, a block split at the offsets and linear ramps between points. The pointer to the sink interface is cached at construction. A `plugin/` test simulates a point queue and checks the value at each offset.
+4. **Integer-latency oversampling cascade.** Use `juce::dsp::Oversampling` with `useIntegerLatency = true`, which does the same job; only code a home-grown cascade if a benchmark justifies it. Keep the idea of oversampling only the non-linearity, with the linear gain applied before upsampling and after downsampling.
+5. **Constant rather than variable latency.** Do not copy TetraDrive's variable latency; if the oversampling factor is a setting, top up with a delay line to the worst-case latency (Drum Foundry's idea) and make the parameter non-automatable (`AudioParameterChoiceAttributes().withAutomatable(false)`).
+6. **Compensated bypass.** The dry path goes through a delay line of the reported latency. Test: in bypass, the output equals the input shifted by `getLatencySamples()`.
+7. **Parameter invariants in the snapshot.** Sort, then minimum gap (1/12 octave), applied when `Params` is filled, with a test that sends crossed crossovers and checks the order.
+8. **Frequency glides in the logarithmic domain**, coefficients recomputed at a fixed interval. JUCE `SmoothedValue<float, ValueSmoothingTypes::Multiplicative>` already smooths in log; recompute the coefficients every N samples, with N fixed and documented.
+9. **Linkwitz-Riley crossover that sums flat.** `juce::dsp::LinkwitzRileyFilter` provides 4th-order low-pass, high-pass and all-pass; reuse only the scheme (compensating all-pass at the crossovers that do not bound the band, cuts applied before the split) and the flat-sum test.
+10. **A single filter design function for DSP and display.** The UI curve calls the same function as the engine, never a copy.
+11. **Meters and analyser.** Peak through `std::atomic<float>` with a max via compare exchange and a read via `exchange(0)`; analyser samples through `juce::AbstractFifo` or `farbot::fifo`.
+12. **Presets in real units by id**, missing value = default, a single list of what is not in presets. Evaluate the chowdsp_utils preset module (BSD) first before writing a manager.
+13. **Version taken from `CHANGELOG.md`** with `file(STRINGS ... REGEX)`, an explicit failure and `CMAKE_CONFIGURE_DEPENDS`, and the changelog compiled as a binary resource for the About page.
+14. **A ramp that lands exactly on the target.** If we write our own ramp, test that point; otherwise `juce::SmoothedValue` already does it.

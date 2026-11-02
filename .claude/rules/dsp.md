@@ -1,12 +1,12 @@
-# Règles DSP
+# DSP rules
 
-* `dsp/` ne dépend pas de JUCE. Aucun `#include <juce_...>`.
-* Chaque processeur expose `prepare(double sampleRate, int maxBlockSize)`, `reset()`, `process(...)`. Pas d'état global.
-* Toute formule cite sa source en commentaire (RBJ cookbook, papier, livre, page).
-* Les coefficients sont recalculés hors de la boucle par échantillon, et seulement quand un paramètre change.
-* Tout paramètre audible est lissé.
-* Non linéarités (saturation, waveshaping, clipping) : oversampling autour d'elles seulement, latence calculée et rapportée.
-* Résultat indépendant de la taille de bloc. Si un algorithme l'exige, traiter par paquets internes de taille fixe (Drum Foundry : 32 échantillons dans sa réverbe). Le test d'indépendance à la taille de bloc active la modulation.
-* Sortie finie garantie : protéger les divisions, les `log`, les filtres instables aux bornes.
-* Pas de `rand()` : générateur déterministe et seedable, pour que les rendus de test soient reproductibles.
-* Un algorithme inspiré d'un projet tiers cite le projet et sa licence ; si le projet est GPL/AGPL et que du code est repris, ADR obligatoire.
+* `dsp/` does not depend on JUCE. No `#include <juce_...>`.
+* Each processor exposes `prepare(double sampleRate, int maxBlockSize)`, `reset()`, `process(...)`. No global state.
+* Every formula cites its source in a comment (RBJ cookbook, paper, book, page).
+* Coefficients are recomputed outside the per-sample loop, and only when a parameter changes.
+* Every audible parameter is smoothed.
+* Nonlinearities (saturation, waveshaping, clipping): oversampling around them only, latency computed and reported.
+* Result independent of block size. If an algorithm requires it, process in fixed-size internal chunks (Drum Foundry: 32 samples in its reverb). The block-size independence test enables modulation.
+* Finite output guaranteed: protect divisions, `log`s, filters unstable at the bounds.
+* No `rand()`: deterministic, seedable generator, so test renders are reproducible.
+* An algorithm inspired by a third-party project cites the project and its license; if the project is GPL/AGPL and code is reused, an ADR is mandatory.

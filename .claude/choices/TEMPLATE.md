@@ -1,22 +1,22 @@
-# NNNN — Titre de la décision
+# NNNN — Decision title
 
-**Date** : AAAA-MM-JJ
-**Statut** : proposée / acceptée / remplacée par NNNN
-**Tâche** : docs/tasks/NNNN-…
+**Date**: YYYY-MM-DD
+**Status**: proposed / accepted / superseded by NNNN
+**Task**: docs/tasks/NNNN-…
 
-## Contexte
+## Context
 
-Le problème, les contraintes, ce qui a déclenché la décision.
+The problem, the constraints, what triggered the decision.
 
-## Options considérées
+## Options considered
 
 1. …
 2. …
 
-## Décision
+## Decision
 
-Ce qu'on fait, en une ou deux phrases.
+What we do, in one or two sentences.
 
-## Conséquences
+## Consequences
 
-Ce que ça rend facile, ce que ça rend difficile, ce qu'il faudra surveiller.
+What it makes easy, what it makes hard, what to watch.

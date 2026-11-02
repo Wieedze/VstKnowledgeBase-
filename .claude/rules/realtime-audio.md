@@ -1,32 +1,32 @@
-# Règles du thread audio
+# Audio thread rules
 
-Référence : Ross Bencina, *Real-time audio programming 101: time waits for nothing*. Principe : **si on ne sait pas combien de temps ça prend, on ne le fait pas sur le thread audio.**
+Reference: Ross Bencina, *Real-time audio programming 101: time waits for nothing*. Principle: **if you don't know how long it takes, don't do it on the audio thread.**
 
-Le "thread audio" couvre `processBlock`, tout ce qu'il appelle, et `prepareToPlay`/`releaseResources` seulement pour ce qui y est explicitement autorisé.
+The "audio thread" covers `processBlock`, everything it calls, and `prepareToPlay`/`releaseResources` only for what is explicitly allowed there.
 
-## Interdit dans `processBlock` et tout ce qu'il appelle
+## Forbidden in `processBlock` and everything it calls
 
-| Interdit | Exemples | Alternative |
+| Forbidden | Examples | Alternative |
 | --- | --- | --- |
-| Allocation / libération mémoire | `new`, `delete`, `malloc`, `std::vector::push_back` au delà de la capacité, `std::string`, `std::function` qui capture, `juce::String`, `AudioBuffer::setSize` qui agrandit | Pré allouer dans `prepareToPlay` ; tailles max connues |
-| Verrou bloquant | `std::mutex::lock`, `CriticalSection`, `ScopedLock` | Atomics, FIFO SPSC lock free, `try_lock` qui saute le travail si occupé |
-| I/O | Fichiers, réseau, `DBG`, `std::cout`, logging | FIFO vers un thread de log |
-| Appels système qui peuvent bloquer | `sleep`, création de thread, `MessageManager` | Thread de fond, `AsyncUpdater` côté message thread |
-| Exceptions | `throw`, fonctions qui peuvent lancer | Codes de retour, préconditions vérifiées en amont |
-| Attente du thread UI | Lire un `Component`, `Value`, `ValueTree` partagé | Snapshot de paramètres atomiques |
-| Algorithmes en temps non borné | Tri, recherche dans une structure qui grandit | Taille fixe, complexité bornée et connue |
+| Memory allocation / deallocation | `new`, `delete`, `malloc`, `std::vector::push_back` beyond capacity, `std::string`, capturing `std::function`, `juce::String`, `AudioBuffer::setSize` that grows | Preallocate in `prepareToPlay`; known max sizes |
+| Blocking lock | `std::mutex::lock`, `CriticalSection`, `ScopedLock` | Atomics, lock-free SPSC FIFO, `try_lock` that skips the work if busy |
+| I/O | Files, network, `DBG`, `std::cout`, logging | FIFO to a logging thread |
+| System calls that can block | `sleep`, thread creation, `MessageManager` | Background thread, `AsyncUpdater` on the message thread side |
+| Exceptions | `throw`, functions that can throw | Return codes, preconditions checked upstream |
+| Waiting on the UI thread | Reading a shared `Component`, `Value`, `ValueTree` | Snapshot of atomic parameters |
+| Algorithms with unbounded time | Sorting, searching a structure that grows | Fixed size, bounded and known complexity |
 
-## Obligatoire
+## Mandatory
 
-* Toute donnée partagée entre l'UI et l'audio passe par un atomic, une FIFO SPSC, ou un échange de pointeur atomique.
-* Un objet lourd remplacé (IR, table, sample) est **libéré hors du thread audio** (file de "garbage" vidée par un timer).
-* Les dénormaux sont neutralisés (`juce::ScopedNoDenormals` en tête de `processBlock`).
-* `prepareToPlay` peut allouer ; il doit allouer pour le pire cas (`maxBlockSize`, sample rate max utilisé).
-* L'hôte peut appeler `processBlock` avec un nombre d'échantillons inférieur à `maxBlockSize`, y compris 0. Le code le gère.
+* Any data shared between the UI and audio goes through an atomic, an SPSC FIFO, or an atomic pointer swap.
+* A replaced heavy object (IR, table, sample) is **freed off the audio thread** (a "garbage" queue emptied by a timer).
+* Denormals are neutralized (`juce::ScopedNoDenormals` at the top of `processBlock`).
+* `prepareToPlay` may allocate; it must allocate for the worst case (`maxBlockSize`, max sample rate used).
+* The host can call `processBlock` with fewer samples than `maxBlockSize`, including 0. The code handles it.
 
-## Comment le vérifier
+## How to check it
 
-* Revue du diff par l'agent `rt-safety-reviewer`.
-* RealtimeSanitizer : `processBlock` et les `process` du DSP marqués `[[clang::nonblocking]]`, tests lancés avec `-fsanitize=realtime` en CI.
-* Primitives prêtes plutôt que maison : `farbot::RealtimeObject`, `farbot::fifo`, `AbstractFifo` (voir `docs/07_A_REPRENDRE.md`).
-* `tools bench` : le coût max d'un bloc reste sous le budget.
+* Diff review by the `rt-safety-reviewer` agent.
+* RealtimeSanitizer: `processBlock` and the DSP `process` functions marked `[[clang::nonblocking]]`, tests run with `-fsanitize=realtime` in CI.
+* Ready-made primitives rather than homemade: `farbot::RealtimeObject`, `farbot::fifo`, `AbstractFifo` (see `docs/07_REUSE.md`).
+* `tools bench`: the max cost of a block stays under budget.

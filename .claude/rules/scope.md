@@ -1,30 +1,30 @@
-# Règles de périmètre (anti dérive)
+# Scope rules (anti drift)
 
-Un plugin dérive vite : une matrice de modulation qui passe de 4 à 17 sources, des formes de LFO "parce que c'est facile", une UI refaite avant que le son soit bon. Ces règles existent pour ça.
+A plugin drifts fast: a modulation matrix that goes from 4 to 17 sources, LFO shapes "because it's easy", a UI redone before the sound is right. These rules exist for that.
 
-## Les documents qui tiennent le périmètre
+## The documents that hold the scope
 
-| Document | Rôle |
+| Document | Role |
 | --- | --- |
-| `docs/SPEC.md` | Une page. Ce que fait la v1 et une section **Hors v1** |
-| `docs/tasks/NNNN-*.md` | Une tâche atomique, avec **Hors périmètre** |
-| `FUTURE.md` | Tout ce qui est demandé ou imaginé et pas construit maintenant |
-| `.claude/STATE.md` | Phase en cours et gate à passer |
+| `docs/SPEC.md` | One page. What v1 does and an **Out of v1** section |
+| `docs/tasks/NNNN-*.md` | One atomic task, with **Out of scope** |
+| `FUTURE.md` | Everything requested or imagined and not built now |
+| `.claude/STATE.md` | Current phase and gate to pass |
 
-## Règles
+## Rules
 
-1. **Rien ne se code s'il n'est pas dans la tâche en cours.** Une idée en cours de route va dans `FUTURE.md` avec une ligne de contexte, puis on revient à la tâche.
-2. **Une tâche tient en une session.** Sinon elle est redécoupée avant de commencer.
-3. **Les phases sont fermées par des gates** (`docs/06_PLAN_DEMARRAGE.md`). On ne commence pas l'UI avant que le gate DSP soit vert.
-4. **Changer la SPEC est une décision**, pas une conséquence : `/grill-with-docs`, puis ADR, puis SPEC amendée.
-5. **Quand un agent hésite sur le périmètre, il s'arrête et demande.** Il ne choisit pas l'option la plus large.
-6. **Pas de "petit refactor au passage"** dans une tâche de fonctionnalité. Refactor = tâche dédiée.
-7. **Le son prime sur l'UI** : pas de travail visuel sur une fonctionnalité dont le DSP n'a pas passé ses tests et l'écoute.
-8. **Ne pas coder ce qui existe.** Avant d'écrire un composant, appliquer la règle de choix de `docs/07_A_REPRENDRE.md` : JUCE, puis MIT/BSD, puis GPL si le plugin est AGPL, puis seulement notre code. La recherche faite est notée dans la tâche.
+1. **Nothing gets coded if it is not in the current task.** An idea that comes up along the way goes into `FUTURE.md` with one line of context, then return to the task.
+2. **A task fits in one session.** Otherwise it is split again before starting.
+3. **Phases are closed by gates** (`docs/06_START_PLAN.md`). Do not start the UI before the DSP gate is green.
+4. **Changing the SPEC is a decision**, not a consequence: `/grill-with-docs`, then ADR, then amended SPEC.
+5. **When an agent hesitates about scope, it stops and asks.** It does not pick the broadest option.
+6. **No "small refactor along the way"** in a feature task. Refactor = dedicated task.
+7. **Sound comes before UI**: no visual work on a feature whose DSP has not passed its tests and the listening check.
+8. **Do not code what exists.** Before writing a component, apply the selection rule of `docs/07_REUSE.md`: JUCE, then MIT/BSD, then GPL if the plugin is AGPL, then only our own code. The search done is noted in the task.
 
-## Signaux de dérive (à vérifier par le task-verifier)
+## Drift signals (to be checked by the task-verifier)
 
-* Fichiers modifiés hors de la couche annoncée par la tâche.
-* Paramètres ajoutés non listés dans la tâche.
-* Diff beaucoup plus gros que ce que la tâche laissait prévoir.
-* Nouveau terme utilisé sans entrée dans `GLOSSARY.md`.
+* Files modified outside the layer announced by the task.
+* Parameters added that are not listed in the task.
+* Diff much bigger than the task suggested.
+* New term used without an entry in `GLOSSARY.md`.

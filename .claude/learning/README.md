@@ -1,5 +1,5 @@
 # Post mortems
 
-Append only. Écrits par le `task-verifier` quand une tâche passe, depuis `TEMPLATE.md`. Nom : `NNNN-slug.md`, même numéro que la tâche.
+Append only. Written by the `task-verifier` when a task passes, from `TEMPLATE.md`. Name: `NNNN-slug.md`, same number as the task.
 
-Avant une tâche, parcourir les post mortems des tâches proches : c'est là que vivent les pièges déjà rencontrés.
+Before a task, go through the post mortems of related tasks: that is where the traps already encountered live.
