@@ -1,223 +1,223 @@
 # Vital
 
-**Verdict : Vital est un moteur de synthé remarquable (SIMD `poly_float`, graphe de processeurs presque sans JUCE, 64 slots de modulation pré câblés) mais c'est du GPL v3 figé depuis avril 2022, sur JUCE 6.0.5, Projucer et C++14, sans CI, avec plusieurs écarts à nos règles temps réel ; on n'en extrait du code que pour un plugin AGPL et en petites pièces (`poly_float`, mathématiques rapides, quelques filtres), et on en reprend surtout des idées de conception.**
+**Verdict: Vital is a remarkable synth engine (SIMD `poly_float`, a processor graph almost free of JUCE, 64 prewired modulation slots), but it is GPL v3 frozen since April 2022, on JUCE 6.0.5, Projucer and C++14, without CI, with several departures from our realtime rules; we extract code from it only for an AGPL plugin and in small pieces (`poly_float`, fast maths, a few filters), and we mostly reuse design ideas.**
 
-Étude faite le 2026-11-02 sur `main` au commit [`636ca0e`](https://github.com/mtytel/vital/tree/636ca0ef517a4db087a6a08a6a8a5e704e21f836) (`git log -1 --format=%cd` : Wed Apr 20 16:53:39 2022 +0100). Les chemins `fichier:ligne` sont relatifs à la racine du dépôt et valent pour ce commit. Préfixe des liens : `https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/`, noté `B/` dans les tableaux.
+Study done on 2026-11-02 on `main` at commit [`636ca0e`](https://github.com/mtytel/vital/tree/636ca0ef517a4db087a6a08a6a8a5e704e21f836) (`git log -1 --format=%cd`: Wed Apr 20 16:53:39 2022 +0100). The `file:line` paths are relative to the repository root and are valid for this commit. Link prefix: `https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/`, written `B/` in the tables.
 
-## 1. Licences et restrictions
+## 1. Licences and restrictions
 
-| Élément | Licence (fichier lu) | Conséquence chez nous |
+| Item | Licence (file read) | Consequence for us |
 | --- | --- | --- |
-| Code de Vital (`src/`, `tests/`) | GPL v3 **ou ultérieure** : [`LICENSE`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/LICENSE) et en tête de chaque fichier, par exemple [`src/synthesis/framework/processor.h:1-15`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.h#L1-L15) | Réutilisable dans un plugin AGPL v3 (la GPL v3 autorise la combinaison avec l'AGPL v3, section 13). Interdit dans un plugin fermé sans licence commerciale, que le README propose via licensing@vital.audio |
-| Nom et marques | [`README.md`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/README.md) : interdit d'utiliser "Vital", "Vital Audio", "Tytel" ou "Matt Tytel" pour nommer ou promouvoir une distribution | Aucun nom de produit, de classe publique ou de texte marketing ne reprend ces noms |
-| Services web | README : interdit de contacter `vital.audio`, `account.vital.audio`, `store.vital.audio` depuis ses propres builds | Ne jamais reprendre `src/common/authentication.h`, `download_section`, `update_check_section` |
-| Presets d'usine | README : licence séparée, redistribution interdite. Ils **ne sont pas** dans le dépôt | Rien à prendre |
-| Wavetables d'usine | Absentes du dépôt (aucun `.vitaltable` ni `.wav` hors `third_party`) | Rien à prendre ; seule la table par défaut est générée par le code |
-| App Store iOS | README : interdit sans exception payante | Sans objet (VST3 seulement) |
-| Polices `fonts/` | Un seul [`fonts/LICENSE`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/fonts/LICENSE), Apache 2.0, qui couvre Roboto, Open Sans, Droid Sans Mono. Lato et Montserrat sont sous SIL OFL 1.1 en amont et leur texte de licence est **absent** du dépôt | *À vérifier* : prendre les polices à la source (Google Fonts), pas dans Vital |
-| `default.vitalskin`, `icons/*.svg` | Aucune licence propre, donc GPL v3 du dépôt par défaut | Pas d'icônes ni de skin repris, l'identité visuelle de Vital est reconnaissable |
-| `third_party/concurrentqueue` (moodycamel) | BSD simplifié (`LICENSE.md`) | Utilisable partout, mais à prendre en amont avec version fixée |
-| `third_party/kissfft` | BSD 3 (`COPYING`) | Idem ; `juce::dsp::FFT` suffit en général |
-| `third_party/json` (nlohmann) | MIT | Déjà listé dans `07_A_REPRENDRE.md` |
-| `third_party/VST_SDK/VST3_SDK` | Steinberg VST3 ou GPL v3 (`LICENSE.txt`) | On utilise le SDK fourni par JUCE 9 |
-| `third_party/firebase_cpp_sdk` | Binaires Google pour l'authentification | Jamais |
-| `third_party/JUCE` | JUCE 6.0.5 embarqué, version lue dans `juce_core.h` | Inutilisable avec JUCE 9 |
+| Vital code (`src/`, `tests/`) | GPL v3 **or later**: [`LICENSE`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/LICENSE) and the header of each file, for example [`src/synthesis/framework/processor.h:1-15`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.h#L1-L15) | Reusable in an AGPL v3 plugin (GPL v3 allows combination with AGPL v3, section 13). Forbidden in a closed plugin without a commercial licence, which the README offers through licensing@vital.audio |
+| Name and trademarks | [`README.md`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/README.md): forbidden to use "Vital", "Vital Audio", "Tytel" or "Matt Tytel" to name or promote a distribution | No product name, public class name or marketing text uses these names |
+| Web services | README: forbidden to contact `vital.audio`, `account.vital.audio`, `store.vital.audio` from your own builds | Never reuse `src/common/authentication.h`, `download_section`, `update_check_section` |
+| Factory presets | README: separate licence, redistribution forbidden. They **are not** in the repository | Nothing to take |
+| Factory wavetables | Absent from the repository (no `.vitaltable` or `.wav` outside `third_party`) | Nothing to take; only the default table is generated by the code |
+| iOS App Store | README: forbidden without a paid exception | Not applicable (VST3 only) |
+| Fonts `fonts/` | A single [`fonts/LICENSE`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/fonts/LICENSE), Apache 2.0, covering Roboto, Open Sans, Droid Sans Mono. Lato and Montserrat are under SIL OFL 1.1 upstream and their licence text is **absent** from the repository | *To verify*: take the fonts from the source (Google Fonts), not from Vital |
+| `default.vitalskin`, `icons/*.svg` | No licence of their own, so the repository's GPL v3 by default | No icons or skin reused; Vital's visual identity is recognisable |
+| `third_party/concurrentqueue` (moodycamel) | Simplified BSD (`LICENSE.md`) | Usable everywhere, but take it from upstream with a pinned version |
+| `third_party/kissfft` | BSD 3 (`COPYING`) | Same; `juce::dsp::FFT` is generally enough |
+| `third_party/json` (nlohmann) | MIT | Already listed in `07_REUSE.md` |
+| `third_party/VST_SDK/VST3_SDK` | Steinberg VST3 or GPL v3 (`LICENSE.txt`) | We use the SDK shipped with JUCE 9 |
+| `third_party/firebase_cpp_sdk` | Google binaries for authentication | Never |
+| `third_party/JUCE` | Embedded JUCE 6.0.5, version read in `juce_core.h` | Unusable with JUCE 9 |
 
-## 2. Architecture du moteur
+## 2. Engine architecture
 
-### 2.1 Couches
+### 2.1 Layers
 
-| Dossier | Lignes | Rôle | Dépendance JUCE |
+| Folder | Lines | Role | JUCE dependency |
 | --- | --- | --- | --- |
-| `src/synthesis/` | 24 952 | Moteur : `framework/` (graphe, SIMD, voix), `filters/`, `effects/`, `modulators/`, `producers/` (oscillateur wavetable, sampler), `modules/` (assemblages), `synth_engine/` | Faible : `#include "JuceHeader.h"` dans [`framework/common.h:19`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/common.h#L19), 107 macros `JUCE_LEAK_DETECTOR`, et `FloatVectorOperations::disableDenormalisedNumberSupport` dans `synth_engine/sound_engine.cpp:245` |
-| `src/common/` | 10 219 | `SynthBase` (pont moteur, UI, état), paramètres, chargement JSON, éditeur de wavetables, tuning | Forte (`String`, `File`, `CriticalSection`, `MidiBuffer`) |
-| `src/interface/` | 37 046 (cpp seuls) | UI OpenGL complète | Totale |
-| `src/plugin/` | petit | `SynthPlugin : AudioProcessor`, `ValueBridge` (paramètre hôte) | Totale |
+| `src/synthesis/` | 24,952 | Engine: `framework/` (graph, SIMD, voices), `filters/`, `effects/`, `modulators/`, `producers/` (wavetable oscillator, sampler), `modules/` (assemblies), `synth_engine/` | Low: `#include "JuceHeader.h"` in [`framework/common.h:19`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/common.h#L19), 107 `JUCE_LEAK_DETECTOR` macros, and `FloatVectorOperations::disableDenormalisedNumberSupport` in `synth_engine/sound_engine.cpp:245` |
+| `src/common/` | 10,219 | `SynthBase` (bridge between engine, UI and state), parameters, JSON loading, wavetable editor, tuning | Strong (`String`, `File`, `CriticalSection`, `MidiBuffer`) |
+| `src/interface/` | 37,046 (cpp only) | Full OpenGL UI | Total |
+| `src/plugin/` | small | `SynthPlugin : AudioProcessor`, `ValueBridge` (host parameter) | Total |
 
-Le moteur est donc séparable de JUCE à faible coût : remplacer l'include de `common.h`, définir les macros de fuite à vide et remplacer l'appel de dénormaux. C'est le seul gros synthé open source étudié où c'est le cas. Mais il n'expose pas notre interface `prepare / reset / process(span)` : il impose son propre graphe.
+The engine can therefore be separated from JUCE at low cost: replace the include in `common.h`, define the leak macros as empty and replace the denormals call. It is the only large open source synth studied where this is the case. But it does not expose our `prepare / reset / process(span)` interface: it imposes its own graph.
 
-### 2.2 Graphe de processeurs
+### 2.2 Processor graph
 
-| Élément | Où | Ce qu'il fait |
+| Item | Where | What it does |
 | --- | --- | --- |
-| `Output` | [`framework/processor.h:30-84`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.h#L30-L84) | Tampon de `poly_float` possédé, taille `kMaxBufferSize * oversample`, plus un "trigger" (masque, valeur, offset dans le bloc) pour les événements de voix |
-| `Input` | `processor.h:86-97` | Un pointeur vers un `Output` source ; pas de copie |
-| `Processor` | `processor.h:128-320` | Classe de base : `process(num_samples)`, `clone()` pour la polyphonie, `hasState()`, `reset(poly_mask)` par voix, `plug / unplug`, débit audio ou débit contrôle (`cr::`, tampon de 1 échantillon) |
-| `ProcessorRouter` | [`framework/processor_router.h:30-111`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor_router.h#L30-L111) | Sous graphe : ordre topologique (`reorder`, `processor_router.cpp:209-245`), insertion automatique d'un nœud `Feedback` (retard d'un bloc) si une connexion crée un cycle (`processor_router.cpp:179-191`) |
-| `SynthModule` | `framework/synth_module.h`, `.cpp` | Module avec contrôles nommés (`createBaseControl`, `createMonoModControl`, `createPolyModControl`) et `StatusOutput` pour l'UI |
-| Bloc maximal | [`framework/common.h:50`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/common.h#L50) : `kMaxBufferSize = 128` | `SynthPlugin::processBlock` découpe le bloc hôte en paquets de 128 au plus ([`plugin/synth_plugin.cpp:165-174`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/plugin/synth_plugin.cpp#L165-L174)) et y aligne le MIDI |
+| `Output` | [`framework/processor.h:30-84`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.h#L30-L84) | Owned `poly_float` buffer, size `kMaxBufferSize * oversample`, plus a "trigger" (mask, value, offset in the block) for voice events |
+| `Input` | `processor.h:86-97` | A pointer to a source `Output`; no copy |
+| `Processor` | `processor.h:128-320` | Base class: `process(num_samples)`, `clone()` for polyphony, `hasState()`, per voice `reset(poly_mask)`, `plug / unplug`, audio rate or control rate (`cr::`, 1-sample buffer) |
+| `ProcessorRouter` | [`framework/processor_router.h:30-111`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor_router.h#L30-L111) | Subgraph: topological order (`reorder`, `processor_router.cpp:209-245`), automatic insertion of a `Feedback` node (one block delay) if a connection creates a cycle (`processor_router.cpp:179-191`) |
+| `SynthModule` | `framework/synth_module.h`, `.cpp` | Module with named controls (`createBaseControl`, `createMonoModControl`, `createPolyModControl`) and `StatusOutput` for the UI |
+| Maximum block | [`framework/common.h:50`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/common.h#L50): `kMaxBufferSize = 128` | `SynthPlugin::processBlock` splits the host block into chunks of at most 128 ([`plugin/synth_plugin.cpp:165-174`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/plugin/synth_plugin.cpp#L165-L174)) and aligns MIDI on them |
 
-Les modifications du graphe sont copiées par chaque clone de voix de façon paresseuse : un compteur partagé `global_changes_` est comparé au compteur local au début de `ProcessorRouter::process` (`processor_router.cpp:66-68`), puis `createAddedProcessors` clone les nouveaux processeurs et `deleteRemovedProcessors` efface les anciens (`processor_router.cpp:313-345`). Ce code tourne **sur le thread audio** et fait `clone()` (allocation) et `std::map::erase` (libération).
+Graph changes are copied lazily by each voice clone: a shared counter `global_changes_` is compared with the local counter at the start of `ProcessorRouter::process` (`processor_router.cpp:66-68`), then `createAddedProcessors` clones the new processors and `deleteRemovedProcessors` deletes the old ones (`processor_router.cpp:313-345`). This code runs **on the audio thread** and does `clone()` (allocation) and `std::map::erase` (deallocation).
 
-### 2.3 SIMD : `poly_float`
+### 2.3 SIMD: `poly_float`
 
-| Point | Où |
+| Point | Where |
 | --- | --- |
-| Choix de l'architecture à la compilation : SSE2 ou NEON, AVX2 explicitement refusé, échec si aucun | [`framework/poly_values.h:23-38`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/poly_values.h#L23-L38) |
-| `poly_int` (masques) et `poly_float`, 4 voies de 32 bits | `poly_values.h:51-435` et `437-974` |
-| Opérations vectorielles (interpolation, `maskLoad`, `swapVoices`, clamp, etc.) | `framework/poly_utils.h` (687 lignes) |
-| Mathématiques rapides vectorisées (`exp2`, `log2`, `tanh` rapides, saturations algébriques, `midiNoteToFrequency`, `dbToMagnitude`) | [`framework/futils.h:37-301`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/futils.h#L37-L301) |
+| Architecture chosen at compile time: SSE2 or NEON, AVX2 explicitly rejected, failure if neither | [`framework/poly_values.h:23-38`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/poly_values.h#L23-L38) |
+| `poly_int` (masks) and `poly_float`, 4 lanes of 32 bits | `poly_values.h:51-435` and `437-974` |
+| Vector operations (interpolation, `maskLoad`, `swapVoices`, clamp, etc.) | `framework/poly_utils.h` (687 lines) |
+| Vectorised fast maths (fast `exp2`, `log2`, `tanh`, algebraic saturations, `midiNoteToFrequency`, `dbToMagnitude`) | [`framework/futils.h:37-301`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/futils.h#L37-L301) |
 
-Le choix structurant : **un `poly_float` porte deux voix stéréo** (gauche et droite de la voix A, gauche et droite de la voix B). `kParallelVoices = poly_float::kSize / 2` ([`framework/voice_handler.cpp:25`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/voice_handler.cpp#L25)). Tout le DSP est donc écrit une seule fois et traite deux voix et deux canaux à la fois. La sortie finale est désentrelacée dans `SynthBase::writeAudio` (`common/synth_base.cpp:597-608`).
+The structuring choice: **one `poly_float` carries two stereo voices** (left and right of voice A, left and right of voice B). `kParallelVoices = poly_float::kSize / 2` ([`framework/voice_handler.cpp:25`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/voice_handler.cpp#L25)). All the DSP is therefore written once and processes two voices and two channels at a time. The final output is deinterleaved in `SynthBase::writeAudio` (`common/synth_base.cpp:597-608`).
 
-`poly_values.h`, `poly_utils.h`, `matrix.h`, `utils.h` et `futils.h` ne dépendent d'aucun en tête JUCE ; ils incluent seulement `common.h`, dont il faut retirer la ligne 19.
+`poly_values.h`, `poly_utils.h`, `matrix.h`, `utils.h` and `futils.h` depend on no JUCE header; they only include `common.h`, from which line 19 must be removed.
 
-### 2.4 Polyphonie
+### 2.4 Polyphony
 
-| Point | Où |
+| Point | Where |
 | --- | --- |
-| Voix regroupées par paires dans un `AggregateVoice`, qui possède un clone complet du routeur de voix | `framework/voice_handler.h:242-245`, `voice_handler.cpp:874-896` (`addParallelVoices`) |
-| Toutes les voix sont créées au démarrage : `setPolyphony(kMaxPolyphony)` avec `kMaxPolyphony = 33` | `synth_engine/sound_engine.cpp:65`, `common/synth_constants.h:34-35` |
-| Le changement de polyphonie à l'exécution ne fait que tuer des voix ; il n'alloue plus puisque le pire cas existe déjà | `voice_handler.cpp:286-288`, `768-779` |
-| Priorités (plus récente, plus ancienne, plus haute, plus basse, round robin), vol ou kill | `voice_handler.h:258-271`, tri dans `voice_handler.cpp:631-646` |
-| Listes de voix en `CircularQueue` à capacité réservée | `voice_handler.h:477-483`, `framework/circular_queue.h` |
+| Voices grouped in pairs in an `AggregateVoice`, which owns a full clone of the voice router | `framework/voice_handler.h:242-245`, `voice_handler.cpp:874-896` (`addParallelVoices`) |
+| All voices are created at startup: `setPolyphony(kMaxPolyphony)` with `kMaxPolyphony = 33` | `synth_engine/sound_engine.cpp:65`, `common/synth_constants.h:34-35` |
+| Changing polyphony at run time only kills voices; it no longer allocates since the worst case already exists | `voice_handler.cpp:286-288`, `768-779` |
+| Priorities (newest, oldest, highest, lowest, round robin), steal or kill | `voice_handler.h:258-271`, sorting in `voice_handler.cpp:631-646` |
+| Voice lists in a `CircularQueue` with reserved capacity | `voice_handler.h:477-483`, `framework/circular_queue.h` |
 
-## 3. Matrice de modulation
+## 3. Modulation matrix
 
-### 3.1 Représentation
+### 3.1 Representation
 
-| Élément | Où | Contenu |
+| Item | Where | Content |
 | --- | --- | --- |
-| Limite | [`common/synth_constants.h:37`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_constants.h#L37) | `kMaxModulationConnections = 64` |
-| Connexion | [`common/synth_types.h:32-51`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_types.h#L32-L51) | Nom de source, nom de destination (chaînes), et un `ModulationConnectionProcessor` possédé |
-| Banque | `common/synth_types.h:53-66`, `common/synth_types.cpp:50-55` | 64 connexions créées une fois au constructeur ; une connexion "libre" a des noms vides |
-| Sources | Toute sortie nommée d'un module (LFO, enveloppes, macros, aléatoire, vélocité, etc.), retrouvée par `engine_->getModulationSource(name)` | Chaîne vers `Output*` dans des `std::map` |
-| Destinations | Chaque paramètre modulable est construit avec `createMonoModControl` ou `createPolyModControl` | [`framework/synth_module.cpp:88-243`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/synth_module.cpp#L88-L243) : valeur de base, somme des modulations (`ModulationSum` ou `cr::VariableAdd`), puis mise à l'échelle (quadratique, cubique, exponentielle) **après** la somme |
-| Processeur de connexion | [`synthesis/modules/modulation_connection_processor.h:24-89`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/modulation_connection_processor.h#L24-L89) | Entrées : source, quantité, "power" (courbe), reset. Options : bipolaire, stéréo (signe inversé à droite), bypass, courbe de remappage `LineGenerator` |
+| Limit | [`common/synth_constants.h:37`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_constants.h#L37) | `kMaxModulationConnections = 64` |
+| Connection | [`common/synth_types.h:32-51`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_types.h#L32-L51) | Source name, destination name (strings), and an owned `ModulationConnectionProcessor` |
+| Bank | `common/synth_types.h:53-66`, `common/synth_types.cpp:50-55` | 64 connections created once in the constructor; a "free" connection has empty names |
+| Sources | Any named output of a module (LFO, envelopes, macros, random, velocity, etc.), found by `engine_->getModulationSource(name)` | String to `Output*` in `std::map` |
+| Destinations | Each modulatable parameter is built with `createMonoModControl` or `createPolyModControl` | [`framework/synth_module.cpp:88-243`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/synth_module.cpp#L88-L243): base value, sum of modulations (`ModulationSum` or `cr::VariableAdd`), then scaling (quadratic, cubic, exponential) **after** the sum |
+| Connection processor | [`synthesis/modules/modulation_connection_processor.h:24-89`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/modulation_connection_processor.h#L24-L89) | Inputs: source, amount, "power" (curve), reset. Options: bipolar, stereo (sign inverted on the right), bypass, `LineGenerator` remap curve |
 
-Les 64 processeurs de connexion sont **déjà dans le graphe** au démarrage, désactivés : leur quantité et leur courbe sont elles mêmes des destinations polyphoniques modulables ([`modules/synth_voice_handler.cpp:79-94`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/synth_voice_handler.cpp#L79-L94)). Ajouter une modulation revient donc à brancher une entrée et activer un processeur existant.
+The 64 connection processors are **already in the graph** at startup, disabled: their amount and their curve are themselves modulatable polyphonic destinations ([`modules/synth_voice_handler.cpp:79-94`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/synth_voice_handler.cpp#L79-L94)). Adding a modulation therefore comes down to plugging an input and enabling an existing processor.
 
-Un `ValueSwitch` par destination choisit entre la valeur de base seule et la branche "base plus modulation" (`synth_module.cpp:174-188`). Sans modulation, la branche de somme est désactivée et ne coûte rien.
+A `ValueSwitch` per destination chooses between the base value alone and the "base plus modulation" branch (`synth_module.cpp:174-188`). Without modulation, the sum branch is disabled and costs nothing.
 
-### 3.2 Ajout et retrait sans verrou
+### 3.2 Lock free adding and removing
 
-1. Le thread message construit un `modulation_change` (pointeurs bruts vers source, destinations mono et poly, interrupteurs, processeur, échelle) : [`common/synth_base.cpp:137-161`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_base.cpp#L137-L161). Toutes les recherches par chaîne se font ici, hors audio.
-2. Il le pousse dans une `moodycamel::ConcurrentQueue<modulation_change>` (`common/synth_base.h:187`, `synth_base.cpp:177` et `203`).
-3. Au début de chaque `processBlock`, `processModulationChanges()` vide la file (`plugin/synth_plugin.cpp:160`, `synth_base.cpp:624-632`).
-4. Sur le thread audio, `SoundEngine::connectModulation` branche la source, fixe l'échelle, active la source et le processeur, branche le processeur dans la destination avec `plugNext`, bascule les interrupteurs : [`synthesis/synth_engine/sound_engine.cpp:139-168`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/synth_engine/sound_engine.cpp#L139-L168). `disconnectModulation` fait l'inverse et repasse la source en débit contrôle si plus personne ne la lit à débit audio (`sound_engine.cpp:174-200`).
+1. The message thread builds a `modulation_change` (raw pointers to the source, mono and poly destinations, switches, processor, scale): [`common/synth_base.cpp:137-161`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/common/synth_base.cpp#L137-L161). All string lookups happen here, off the audio thread.
+2. It pushes it into a `moodycamel::ConcurrentQueue<modulation_change>` (`common/synth_base.h:187`, `synth_base.cpp:177` and `203`).
+3. At the start of each `processBlock`, `processModulationChanges()` drains the queue (`plugin/synth_plugin.cpp:160`, `synth_base.cpp:624-632`).
+4. On the audio thread, `SoundEngine::connectModulation` plugs the source, sets the scale, enables the source and the processor, plugs the processor into the destination with `plugNext`, and flips the switches: [`synthesis/synth_engine/sound_engine.cpp:139-168`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/synth_engine/sound_engine.cpp#L139-L168). `disconnectModulation` does the reverse and switches the source back to control rate if nobody reads it at audio rate any more (`sound_engine.cpp:174-200`).
 
-Points qui ne respectent pas `.claude/rules/realtime-audio.md` dans ce chemin :
+Points in this path that do not respect `.claude/rules/realtime-audio.md`:
 
-| Problème | Où |
+| Problem | Where |
 | --- | --- |
-| `plugNext` crée une nouvelle `Input` (`make_shared`, `push_back`) si la somme n'a plus d'entrée libre ; les `ModulationSum` sont créées avec zéro entrée, donc la première modulation de chaque destination alloue sur le thread audio | [`framework/processor.cpp:105-121`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.cpp#L105-L121), `synth_module.cpp:153` |
-| `connect` peut faire `new cr::Feedback()` si la connexion crée un cycle | `framework/processor_router.cpp:179-186` |
-| La recopie paresseuse du graphe par voix clone et libère sur le thread audio | `processor_router.cpp:66-68`, `313-345` |
-| Les connexions par voix sont dans `std::map` (`processors_`) | `processor_router.h:96` |
+| `plugNext` creates a new `Input` (`make_shared`, `push_back`) if the sum has no free input left; the `ModulationSum` objects are created with zero inputs, so the first modulation of each destination allocates on the audio thread | [`framework/processor.cpp:105-121`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/processor.cpp#L105-L121), `synth_module.cpp:153` |
+| `connect` can do `new cr::Feedback()` if the connection creates a cycle | `framework/processor_router.cpp:179-186` |
+| The lazy per voice copy of the graph clones and frees on the audio thread | `processor_router.cpp:66-68`, `313-345` |
+| Per voice connections are in a `std::map` (`processors_`) | `processor_router.h:96` |
 
-### 3.3 Lissage
+### 3.3 Smoothing
 
-| Mécanisme | Où | Comportement |
+| Mechanism | Where | Behaviour |
 | --- | --- | --- |
-| Quantité de modulation | [`modules/modulation_connection_processor.cpp:90-110`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/modulation_connection_processor.cpp#L90-L110) | Rampe linéaire de l'ancienne à la nouvelle quantité sur la durée du bloc ; remise à la cible sans rampe au déclenchement d'une voix (`getResetMask`) ; quantité remise à zéro si l'échelle de destination change (`:56-58`) |
-| Paramètres de base | [`utilities/smooth_value.cpp:26-49`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/utilities/smooth_value.cpp#L26-L49) | Filtre un pôle à 5 Hz (débit audio) ou 20 Hz (débit contrôle, `smooth_value.h:25` et `54`), fin en interpolation linéaire, puis **le processeur se désactive** quand la valeur est atteinte |
+| Modulation amount | [`modules/modulation_connection_processor.cpp:90-110`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/modules/modulation_connection_processor.cpp#L90-L110) | Linear ramp from the old to the new amount over the block duration; reset to the target without a ramp when a voice is triggered (`getResetMask`); amount reset to zero if the destination scale changes (`:56-58`) |
+| Base parameters | [`utilities/smooth_value.cpp:26-49`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/utilities/smooth_value.cpp#L26-L49) | One pole filter at 5 Hz (audio rate) or 20 Hz (control rate, `smooth_value.h:25` and `54`), ending with linear interpolation, then **the processor disables itself** once the value is reached |
 
-La rampe par bloc rend le résultat dépendant de la taille de bloc, ce que nos invariants interdisent (`03_ARCHITECTURE.md`). Le découpage à 128 échantillons borne l'effet sans l'annuler.
+The per block ramp makes the result depend on block size, which our invariants forbid (`03_ARCHITECTURE.md`). Splitting at 128 samples bounds the effect without cancelling it.
 
-### 3.4 Coût
+### 3.4 Cost
 
-1. Chaque connexion active coûte une boucle par échantillon (multiplication, addition, éventuellement courbe et remappage) par paire de voix, en SIMD (`modulation_connection_processor.cpp:67-88` choisit parmi quatre variantes pour ne pas payer la courbe ou le remappage s'ils sont neutres).
-2. Une source ou destination à débit contrôle ne calcule qu'une valeur par bloc ; une source passe à débit audio seulement si une destination audio la lit (`sound_engine.cpp:153-156`).
-3. Les connexions inactives et les destinations sans modulation sont désactivées, donc gratuites.
-4. Le test `tests/stress/modulation_stress_test.cpp` branche toutes les modulations et vérifie seulement que la sortie reste finie ; il ne mesure pas le temps.
+1. Each active connection costs a per sample loop (multiplication, addition, possibly curve and remap) per voice pair, in SIMD (`modulation_connection_processor.cpp:67-88` chooses among four variants so as not to pay for the curve or the remap when they are neutral).
+2. A control rate source or destination computes only one value per block; a source switches to audio rate only if an audio destination reads it (`sound_engine.cpp:153-156`).
+3. Inactive connections and destinations without modulation are disabled, so they are free.
+4. The test `tests/stress/modulation_stress_test.cpp` plugs in all modulations and only checks that the output stays finite; it does not measure time.
 
-## 4. Paramètres hôte et état
+## 4. Host parameters and state
 
-| Point | Où | Commentaire |
+| Point | Where | Comment |
 | --- | --- | --- |
-| Paramètre hôte | [`plugin/value_bridge.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/plugin/value_bridge.h) : `ValueBridge : AudioProcessorParameter` | Pas d'APVTS. `setValue` appelle `SynthBase::valueChangedExternal` |
-| Écriture de la valeur moteur | `common/synth_base.cpp:66-67` et `108-118` | `controls_[name]->set(value)` : recherche `std::map` par `std::string`, écriture non atomique d'un `poly_float` lu par l'audio, puis `new ValueChangedCallback` posté au thread message. En VST3, JUCE appelle `setValue` depuis le thread audio : allocation et chaîne sur ce thread |
-| Description des paramètres | `common/synth_parameters.cpp` | Table unique (nom, min, max, défaut, échelle, unité, texte), comme notre `plugin/Parameters.*` |
-| État | `plugin/synth_plugin.cpp:189-221`, `common/load_save.cpp` | JSON complet ; `setStateInformation` suspend le traitement (`suspendProcessing`) et ouvre une boîte de dialogue en cas d'erreur |
-| Wavetable remplacée | [`synthesis/lookups/wavetable.cpp:38-87`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/lookups/wavetable.cpp#L38-L87), `wavetable.h:131-132`, `synth_oscillator.cpp:1204` et `1283` | L'audio publie `std::atomic<WavetableData*> active_audio_data_` pendant son bloc ; le thread qui remplace attend en `yield` que l'audio ait relâché avant de libérer l'ancienne table. L'audio ne bloque jamais, mais `current_data_` n'est pas atomique |
+| Host parameter | [`plugin/value_bridge.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/plugin/value_bridge.h): `ValueBridge : AudioProcessorParameter` | No APVTS. `setValue` calls `SynthBase::valueChangedExternal` |
+| Writing the engine value | `common/synth_base.cpp:66-67` and `108-118` | `controls_[name]->set(value)`: `std::map` lookup by `std::string`, non atomic write of a `poly_float` read by the audio thread, then `new ValueChangedCallback` posted to the message thread. In VST3, JUCE calls `setValue` from the audio thread: allocation and strings on that thread |
+| Parameter description | `common/synth_parameters.cpp` | Single table (name, min, max, default, scale, unit, text), like our `plugin/Parameters.*` |
+| State | `plugin/synth_plugin.cpp:189-221`, `common/load_save.cpp` | Full JSON; `setStateInformation` suspends processing (`suspendProcessing`) and opens a dialog box on error |
+| Replaced wavetable | [`synthesis/lookups/wavetable.cpp:38-87`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/lookups/wavetable.cpp#L38-L87), `wavetable.h:131-132`, `synth_oscillator.cpp:1204` and `1283` | The audio thread publishes `std::atomic<WavetableData*> active_audio_data_` during its block; the replacing thread waits with `yield` until the audio thread has released it before freeing the old table. The audio thread never blocks, but `current_data_` is not atomic |
 
 ## 5. UI
 
-| Point | Où |
+| Point | Where |
 | --- | --- |
-| Rendu tout OpenGL : un `OpenGLContext` attaché à `FullInterface`, repeint en continu, `setSwapInterval(0)` | [`interface/editor_sections/full_interface.cpp:232-249`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/interface/editor_sections/full_interface.cpp#L232-L249) |
-| Boucle de rendu : `renderOpenGL` dessine le fond, les mètres de modulation puis chaque `OpenGlComponent` | `full_interface.cpp:613-628` |
-| Base des composants : `OpenGlComponent` (`init`, `render`, `destroy`), plus `OpenGlLineRenderer`, `OpenGlMultiQuad`, `OpenGlImage` | `interface/editor_components/open_gl_component.h:27-60` et voisins |
-| Shaders maison | `interface/look_and_feel/shaders.*` |
-| Composants notables | Éditeur de courbe LFO/MSEG (`line_editor`, `lfo_editor`), enveloppe, réponse de filtre et d'EQ, compresseur multibande, wavetable 3D, oscilloscope, spectrogramme, mètres de modulation sur chaque bouton |
+| All OpenGL rendering: an `OpenGLContext` attached to `FullInterface`, repainted continuously, `setSwapInterval(0)` | [`interface/editor_sections/full_interface.cpp:232-249`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/interface/editor_sections/full_interface.cpp#L232-L249) |
+| Render loop: `renderOpenGL` draws the background, the modulation meters, then each `OpenGlComponent` | `full_interface.cpp:613-628` |
+| Component base: `OpenGlComponent` (`init`, `render`, `destroy`), plus `OpenGlLineRenderer`, `OpenGlMultiQuad`, `OpenGlImage` | `interface/editor_components/open_gl_component.h:27-60` and neighbours |
+| Custom shaders | `interface/look_and_feel/shaders.*` |
+| Notable components | LFO/MSEG curve editor (`line_editor`, `lfo_editor`), envelope, filter and EQ response, multiband compressor, 3D wavetable, oscilloscope, spectrogram, modulation meters on each knob |
 
-Lecture de l'état audio par l'UI, sans verrou :
+Lock free reading of the audio state by the UI:
 
-1. `StatusOutput` ([`framework/synth_module.h:29-55`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/synth_module.h#L29-L55)) copie la première valeur d'une sortie à la fin de chaque bloc (`sound_engine.cpp:257-258`), masquée par les voix actives et sommée sur les deux voix du `poly_float` (`synth_voice_handler.cpp:318-335`). L'UI garde un pointeur vers le `StatusOutput` et lit `value()` à chaque image (par exemple phase de LFO dans `lfo_editor.cpp:47-50`, mètres de modulation dans `modulation_manager.cpp:1100-1135`).
-2. Oscilloscope et spectrogramme : l'audio pousse chaque échantillon dans un `StereoMemory` circulaire (`lookups/memory.h:56-62`, `synth_base.cpp:634-675`) et copie une fenêtre dans `oscilloscope_memory_` ; l'UI lit ces tampons directement (`oscilloscope.h:33`).
-3. Aucune de ces lectures n'est atomique ni protégée : ce sont des courses de données au sens du C++, tolérées parce qu'une valeur déchirée ne produit qu'une image fausse. Nos règles (`ui.md`, `realtime-audio.md`) demandent un atomic ou une FIFO.
+1. `StatusOutput` ([`framework/synth_module.h:29-55`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/synth_module.h#L29-L55)) copies the first value of an output at the end of each block (`sound_engine.cpp:257-258`), masked by the active voices and summed over the two voices of the `poly_float` (`synth_voice_handler.cpp:318-335`). The UI keeps a pointer to the `StatusOutput` and reads `value()` on every frame (for example LFO phase in `lfo_editor.cpp:47-50`, modulation meters in `modulation_manager.cpp:1100-1135`).
+2. Oscilloscope and spectrogram: the audio thread pushes each sample into a circular `StereoMemory` (`lookups/memory.h:56-62`, `synth_base.cpp:634-675`) and copies a window into `oscilloscope_memory_`; the UI reads these buffers directly (`oscilloscope.h:33`).
+3. None of these reads is atomic or protected: they are data races in the C++ sense, tolerated because a torn value only produces a wrong frame. Our rules (`ui.md`, `realtime-audio.md`) require an atomic or a FIFO.
 
-Limites pour nous : OpenGL est déprécié par Apple depuis macOS 10.14, l'UI fait 37 000 lignes liées à JUCE 6 et à l'identité visuelle de Vital, et l'éditeur n'a pas d'échelle testée comme l'exige `ui.md`.
+Limits for us: OpenGL has been deprecated by Apple since macOS 10.14, the UI is 37,000 lines tied to JUCE 6 and to Vital's visual identity, and the editor has no tested scaling as `ui.md` requires.
 
 ## 6. Build, tests, CI
 
-| Point | État |
+| Point | State |
 | --- | --- |
-| Système de build | Projucer : `plugin/vital.jucer`, `standalone/vital.jucer`, `headless/vital.jucer`, `tests/vital.jucer`, plus un `Makefile` racine pour Linux. Aucun `CMakeLists.txt` hors `third_party` |
-| Unity build | `src/unity_build/*.cpp` regroupe les sources par zone |
-| JUCE | 6.0.5 embarqué dans `third_party/JUCE` (pas de sous module) |
-| Standard C++ | `cppLanguageStandard="14"` dans `plugin/vital.jucer` |
-| Formats | VST2, VST3, AU, AUv3, Standalone, LV2 sous Linux |
-| SIMD | `-msse2` ou NEON imposé par le `Makefile` |
-| Tests | 58 fichiers `*_test.cpp` sur `juce::UnitTest` (`tests/main.cpp`). Les tests DSP vérifient surtout que la sortie reste finie sous entrées extrêmes (`runInputBoundsTest`, par exemple `tests/synthesis/filters/digital_svf_test.cpp:20-23`) ; pas de valeur attendue ni de référence audio |
-| CI | Aucune (pas de `.github/`) |
+| Build system | Projucer: `plugin/vital.jucer`, `standalone/vital.jucer`, `headless/vital.jucer`, `tests/vital.jucer`, plus a root `Makefile` for Linux. No `CMakeLists.txt` outside `third_party` |
+| Unity build | `src/unity_build/*.cpp` groups the sources by area |
+| JUCE | 6.0.5 embedded in `third_party/JUCE` (not a submodule) |
+| C++ standard | `cppLanguageStandard="14"` in `plugin/vital.jucer` |
+| Formats | VST2, VST3, AU, AUv3, Standalone, LV2 on Linux |
+| SIMD | `-msse2` or NEON enforced by the `Makefile` |
+| Tests | 58 `*_test.cpp` files on `juce::UnitTest` (`tests/main.cpp`). The DSP tests mostly check that the output stays finite under extreme inputs (`runInputBoundsTest`, for example `tests/synthesis/filters/digital_svf_test.cpp:20-23`); no expected value and no audio reference |
+| CI | None (no `.github/`) |
 
-## 7. Qualité et maintenance
+## 7. Quality and maintenance
 
-1. Dernier commit le 20 avril 2022 (« Update README.md ») ; le README annonce que les sources sont publiées avec retard sur les binaires, et rien n'a été publié depuis.
-2. L'auteur refuse les pull requests et ne priorise pas les problèmes de compilation (README).
-3. Le code est dense, cohérent, rapide, mais quasiment sans commentaire ni source citée pour les formules DSP (aucune référence trouvée dans `src/synthesis` et `src/common`). Notre règle `dsp.md` exige la source : tout filtre repris devra être documenté par nous.
-4. Gestion mémoire en `new` nus confiés au graphe, `std::string` et `std::map` pour l'adressage des contrôles, `std::shared_ptr` partout dans `Processor`.
-5. Pas de `ScopedNoDenormals` : `SoundEngine::process` appelle `disableDenormalisedNumberSupport` à chaque bloc sans restaurer l'état.
-6. Le portage vers JUCE 9 et C++23 n'a jamais été fait en amont. Des forks communautaires existent (par exemple "Vitalium" dans DISTRHO-Ports), *à vérifier* avant de s'y appuyer.
+1. Last commit on 20 April 2022 ("Update README.md"); the README states that sources are published with a delay after the binaries, and nothing has been published since.
+2. The author refuses pull requests and does not prioritise build problems (README).
+3. The code is dense, consistent and fast, but has almost no comments and no cited sources for the DSP formulas (no reference found in `src/synthesis` and `src/common`). Our `dsp.md` rule requires the source: any filter we reuse will have to be documented by us.
+4. Memory management with bare `new` handed over to the graph, `std::string` and `std::map` for control addressing, `std::shared_ptr` everywhere in `Processor`.
+5. No `ScopedNoDenormals`: `SoundEngine::process` calls `disableDenormalisedNumberSupport` on every block without restoring the state.
+6. The port to JUCE 9 and C++23 was never done upstream. Community forks exist (for example "Vitalium" in DISTRHO-Ports), *to verify* before relying on them.
 
-## 8. À reprendre
+## 8. To reuse
 
-### (a) Code extractible tel quel (plugin AGPL v3 seulement)
+### (a) Code extractable as is (AGPL v3 plugin only)
 
-Tout ce tableau est GPL v3 ou ultérieure. Il exige un ADR (règle de `CLAUDE.md` et `dsp.md`) et est **interdit si le plugin est fermé**. Tant que l'ADR 0001 de licence n'est pas pris, rien de cette catégorie n'entre dans un projet.
+This whole table is GPL v3 or later. It requires an ADR (rule in `CLAUDE.md` and `dsp.md`) and is **forbidden if the plugin is closed source**. As long as licence ADR 0001 has not been made, nothing from this category enters a project.
 
-| Code | Couche | Effort d'extraction | Remarque |
+| Code | Layer | Extraction effort | Remark |
 | --- | --- | --- | --- |
-| `poly_float`, `poly_int` : [`src/synthesis/framework/poly_values.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/poly_values.h), `poly_utils.h`, `matrix.h`, `utils.h` | `dsp/` | Faible : copier quatre en têtes, remplacer `common.h` par un en tête minimal sans JUCE. Ajouter des tests | SSE2 et NEON seulement. Avant de le prendre, comparer avec `chowdsp_simd` / xsimd (BSD, utilisable partout) : à besoin égal, le BSD gagne selon la règle de choix |
-| Mathématiques rapides : [`src/synthesis/framework/futils.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/futils.h) | `dsp/` | Faible, dépend du point précédent | Approximations sans borne d'erreur documentée : à mesurer par test avant usage |
-| Filtres et effets : `filters/digital_svf`, `diode_filter`, `ladder_filter`, `sallen_key_filter`, `dirty_filter`, `formant_filter`, `comb_filter`, `iir_halfband_decimator`, `fir_halfband_decimator`, `linkwitz_riley_filter` ; `effects/compressor` (multibande), `reverb`, `delay`, `phaser`, `distortion` | `dsp/` | Moyen à fort : chaque classe hérite de `Processor` et lit ses paramètres par `input(i)->at(0)`. Soit on reprend tout `framework/` (7 300 lignes, avec les défauts temps réel du §3.2), soit on réécrit l'enveloppe de la classe autour de notre `prepare / reset / process(span)` en gardant le cœur de calcul | Le cœur de calcul est la partie qui a de la valeur. Pas de source citée : à retrouver et noter |
-| Oscillateur wavetable à morphing spectral : `producers/synth_oscillator.cpp` (1 514 lignes), `producers/spectral_morph.h`, `lookups/wavetable.*`, `lookups/wave_frame.*` | `dsp/` | Fort : très couplé à `poly_float`, aux voix par paires et au FFT | Seulement si un projet fait un synthé wavetable ; c'est l'identité sonore de Vital |
-| Générateur de courbes LFO/MSEG : `common/line_generator.cpp` | `dsp/` (calcul) | Moyen : retirer `JuceHeader.h` et nlohmann de la partie calcul | `gin_plugin` (BSD) fournit déjà un MSEG ; le préférer |
-| `CircularQueue` à capacité réservée : `framework/circular_queue.h` | `dsp/` | Faible | `farbot` et `chowdsp_data_structures` (BSD) couvrent le besoin ; ne prendre que si l'API manque |
+| `poly_float`, `poly_int`: [`src/synthesis/framework/poly_values.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/poly_values.h), `poly_utils.h`, `matrix.h`, `utils.h` | `dsp/` | Low: copy four headers, replace `common.h` with a minimal header without JUCE. Add tests | SSE2 and NEON only. Before taking it, compare with `chowdsp_simd` / xsimd (BSD, usable everywhere): for equal needs, BSD wins under the selection rule |
+| Fast maths: [`src/synthesis/framework/futils.h`](https://github.com/mtytel/vital/blob/636ca0ef517a4db087a6a08a6a8a5e704e21f836/src/synthesis/framework/futils.h) | `dsp/` | Low, depends on the previous item | Approximations without a documented error bound: measure with a test before use |
+| Filters and effects: `filters/digital_svf`, `diode_filter`, `ladder_filter`, `sallen_key_filter`, `dirty_filter`, `formant_filter`, `comb_filter`, `iir_halfband_decimator`, `fir_halfband_decimator`, `linkwitz_riley_filter`; `effects/compressor` (multiband), `reverb`, `delay`, `phaser`, `distortion` | `dsp/` | Medium to high: each class inherits from `Processor` and reads its parameters through `input(i)->at(0)`. Either we take all of `framework/` (7,300 lines, with the realtime defects of §3.2), or we rewrite the class shell around our `prepare / reset / process(span)` while keeping the computation core | The computation core is the valuable part. No cited source: to be found and noted |
+| Wavetable oscillator with spectral morphing: `producers/synth_oscillator.cpp` (1,514 lines), `producers/spectral_morph.h`, `lookups/wavetable.*`, `lookups/wave_frame.*` | `dsp/` | High: tightly coupled to `poly_float`, paired voices and the FFT | Only if a project builds a wavetable synth; it is Vital's sonic identity |
+| LFO/MSEG curve generator: `common/line_generator.cpp` | `dsp/` (computation) | Medium: remove `JuceHeader.h` and nlohmann from the computation part | `gin_plugin` (BSD) already provides an MSEG; prefer it |
+| `CircularQueue` with reserved capacity: `framework/circular_queue.h` | `dsp/` | Low | `farbot` and `chowdsp_data_structures` (BSD) cover the need; take it only if the API is missing |
 
-### (b) Idées de conception à reproduire
+### (b) Design ideas to reproduce
 
-| Idée | Vue dans | Couche chez nous |
+| Idea | Seen in | Layer on our side |
 | --- | --- | --- |
-| Un vecteur SIMD porte deux voix stéréo ; le DSP s'écrit une fois pour deux voix et deux canaux | `voice_handler.cpp:25`, `synth_base.cpp:597-608` | `dsp/` |
-| Toutes les voix créées au pire cas au démarrage ; changer la polyphonie ne fait que tuer des voix | `sound_engine.cpp:65`, `voice_handler.cpp:768-779` | `dsp/` |
-| Nombre fixe de slots de modulation pré câblés et désactivés ; connecter = brancher et activer, jamais créer | `synth_voice_handler.cpp:79-94`, `synth_types.cpp:50-55` | `dsp/` (moteur), `plugin/` (paramètres des slots déclarés une fois, IDs figés) |
-| Quantité et courbe d'une modulation sont elles mêmes des destinations modulables | `synth_voice_handler.cpp:86-91` | `dsp/` |
-| Résolution des noms de source et destination sur le thread message, envoi d'un message de pointeurs prêts dans une FIFO lock free, application au début du bloc | `synth_base.cpp:137-203`, `synth_plugin.cpp:160` | `plugin/` |
-| Interrupteur par destination : branche "sans modulation" gratuite tant qu'aucune modulation n'y est branchée | `synth_module.cpp:174-188` | `dsp/` |
-| Débit contrôle automatique : une source ne passe en audio que si une destination audio la lit | `sound_engine.cpp:153-156`, `196-197` | `dsp/` |
-| Variantes de la boucle de modulation choisies par bloc pour ne pas payer courbe ou remappage neutres | `modulation_connection_processor.cpp:67-88` | `dsp/` |
-| Mise à l'échelle non linéaire du paramètre appliquée **après** la somme des modulations | `synth_module.cpp:95-141` | `dsp/` |
-| Lisseur qui se désactive une fois la cible atteinte | `smooth_value.cpp:26-31` | `dsp/` |
-| Découpage du bloc hôte en paquets de taille maximale fixe, MIDI aligné sur ces paquets | `synth_plugin.cpp:165-174` | `plugin/` |
-| Pointeur atomique "en cours d'usage" publié par l'audio pendant le bloc ; le thread qui remplace une table attend sa libération avant de détruire l'ancienne. À implémenter avec `farbot::RealtimeObject` plutôt qu'à la main | `wavetable.cpp:85-87`, `wavetable.h:131-132` | `dsp/`, `plugin/` |
-| Sorties d'état nommées (`StatusOutput`) copiées en fin de bloc et lues par l'UI à chaque image, mais via atomics ou FIFO chez nous | `synth_module.h:29-55`, `sound_engine.cpp:257-258` | `plugin/` (publication), `ui/` (lecture sur timer) |
-| Mètre de modulation dessiné sur chaque bouton modulé, alimenté par ces sorties d'état | `modulation_manager.cpp:1100-1135` | `ui/` |
-| Test de stress "toutes les modulations branchées, sortie finie" | `tests/stress/modulation_stress_test.cpp` | Tests `dsp/` |
-| Binaire headless qui rend de l'audio pour un preset | `src/headless/main.cpp`, `synth_base.cpp:380-420` | `tools/` (déjà prévu) |
+| One SIMD vector carries two stereo voices; the DSP is written once for two voices and two channels | `voice_handler.cpp:25`, `synth_base.cpp:597-608` | `dsp/` |
+| All voices created for the worst case at startup; changing polyphony only kills voices | `sound_engine.cpp:65`, `voice_handler.cpp:768-779` | `dsp/` |
+| Fixed number of prewired, disabled modulation slots; connecting = plugging and enabling, never creating | `synth_voice_handler.cpp:79-94`, `synth_types.cpp:50-55` | `dsp/` (engine), `plugin/` (slot parameters declared once, IDs frozen) |
+| A modulation's amount and curve are themselves modulatable destinations | `synth_voice_handler.cpp:86-91` | `dsp/` |
+| Source and destination names resolved on the message thread, a message of ready pointers sent through a lock free FIFO, applied at the start of the block | `synth_base.cpp:137-203`, `synth_plugin.cpp:160` | `plugin/` |
+| Per destination switch: free "no modulation" branch as long as no modulation is plugged into it | `synth_module.cpp:174-188` | `dsp/` |
+| Automatic control rate: a source switches to audio rate only if an audio destination reads it | `sound_engine.cpp:153-156`, `196-197` | `dsp/` |
+| Variants of the modulation loop chosen per block so as not to pay for neutral curve or remap | `modulation_connection_processor.cpp:67-88` | `dsp/` |
+| Non linear parameter scaling applied **after** the sum of modulations | `synth_module.cpp:95-141` | `dsp/` |
+| Smoother that disables itself once the target is reached | `smooth_value.cpp:26-31` | `dsp/` |
+| Host block split into chunks of fixed maximum size, MIDI aligned on these chunks | `synth_plugin.cpp:165-174` | `plugin/` |
+| "In use" atomic pointer published by the audio thread during the block; the thread replacing a table waits for its release before destroying the old one. Implement with `farbot::RealtimeObject` rather than by hand | `wavetable.cpp:85-87`, `wavetable.h:131-132` | `dsp/`, `plugin/` |
+| Named status outputs (`StatusOutput`) copied at the end of the block and read by the UI on every frame, but through atomics or a FIFO on our side | `synth_module.h:29-55`, `sound_engine.cpp:257-258` | `plugin/` (publishing), `ui/` (reading on a timer) |
+| Modulation meter drawn on each modulated knob, fed by these status outputs | `modulation_manager.cpp:1100-1135` | `ui/` |
+| Stress test "all modulations plugged in, finite output" | `tests/stress/modulation_stress_test.cpp` | `dsp/` tests |
+| Headless binary that renders audio for a preset | `src/headless/main.cpp`, `synth_base.cpp:380-420` | `tools/` (already planned) |
 
-### (c) À ne pas reprendre
+### (c) Not to reuse
 
-| Élément | Pourquoi | Couche concernée |
+| Item | Why | Layer concerned |
 | --- | --- | --- |
-| `ProcessorRouter` et le graphe générique (`processor.*`, `processor_router.*`, `synth_module.*`) en bloc | Mutation du graphe, clonage et libération sur le thread audio (`processor_router.cpp:66-68`, `313-345`), allocation dans `plugNext` (`processor.cpp:116-120`) et `new cr::Feedback` (`processor_router.cpp:182`) ; contraire à `realtime-audio.md`. Nos plugins ont des chaînes fixes qui n'en ont pas besoin | `dsp/` |
-| `ValueBridge` et le chemin paramètre hôte vers moteur | Pas d'APVTS, écriture non atomique, `std::map` par chaîne et `new` sur le thread audio (`synth_base.cpp:66-67`, `108-118`) ; contraire à `juce.md` (snapshot `Params`) | `plugin/` |
-| Lissage par rampe sur la durée du bloc | Résultat dépendant de la taille de bloc | `dsp/` |
-| UI OpenGL complète, shaders, skin, icônes | OpenGL déprécié sur macOS, 37 000 lignes JUCE 6, identité visuelle de Vital, pas de mise à l'échelle testée ; `gin_gui` ou JUCE natif suffisent | `ui/` |
-| Lectures UI non synchronisées des tampons audio (`StatusOutput`, oscilloscope) | Courses de données ; on garde l'idée, pas l'implémentation | `ui/` |
-| Build Projucer, `Makefile`, JUCE 6.0.5 embarqué, C++14, unity build | Pamplejuce, CMake et JUCE 9 en sous module couvrent tout | build |
-| Tests `juce::UnitTest` limités aux sorties finies | Nos tests nomment signal, valeur attendue et tolérance (`testing.md`) | tests |
-| `setStateInformation` qui ouvre une boîte de dialogue et suspend le traitement | Pas d'UI depuis le processeur ; migration d'état versionnée chez nous | `plugin/` |
-| Authentification, Firebase, téléchargement de contenus, vérification de mise à jour | Interdit par le README et sans objet | tous |
-| Nom, marques, presets d'usine, polices sans texte de licence | Restrictions du README et licences absentes | tous |
+| `ProcessorRouter` and the generic graph (`processor.*`, `processor_router.*`, `synth_module.*`) as a whole | Graph mutation, cloning and freeing on the audio thread (`processor_router.cpp:66-68`, `313-345`), allocation in `plugNext` (`processor.cpp:116-120`) and `new cr::Feedback` (`processor_router.cpp:182`); contrary to `realtime-audio.md`. Our plugins have fixed chains that do not need it | `dsp/` |
+| `ValueBridge` and the host parameter to engine path | No APVTS, non atomic write, `std::map` by string and `new` on the audio thread (`synth_base.cpp:66-67`, `108-118`); contrary to `juce.md` (`Params` snapshot) | `plugin/` |
+| Ramp smoothing over the block duration | Result depends on block size | `dsp/` |
+| Full OpenGL UI, shaders, skin, icons | OpenGL deprecated on macOS, 37,000 lines of JUCE 6, Vital's visual identity, no tested scaling; `gin_gui` or native JUCE are enough | `ui/` |
+| Unsynchronised UI reads of audio buffers (`StatusOutput`, oscilloscope) | Data races; we keep the idea, not the implementation | `ui/` |
+| Projucer build, `Makefile`, embedded JUCE 6.0.5, C++14, unity build | Pamplejuce, CMake and JUCE 9 as a submodule cover everything | build |
+| `juce::UnitTest` tests limited to finite outputs | Our tests name the signal, expected value and tolerance (`testing.md`) | tests |
+| `setStateInformation` that opens a dialog box and suspends processing | No UI from the processor; versioned state migration on our side | `plugin/` |
+| Authentication, Firebase, content download, update check | Forbidden by the README and not applicable | all |
+| Name, trademarks, factory presets, fonts without licence text | README restrictions and missing licences | all |

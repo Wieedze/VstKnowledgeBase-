@@ -1,28 +1,28 @@
 # STATE
 
-Maintenu à la main. Une tâche ne se ferme pas sans mettre ce fichier à jour.
+Maintained by hand. A task does not close without updating this file.
 
-## Ce repo
+## This repo
 
-Playbook (base de connaissances), pas un plugin. Version initiale du 2026-11-02.
+Playbook (knowledge base), not a plugin. Initial version of 2026-11-02.
 
-## Dans un projet de plugin, ce fichier contient
+## In a plugin project, this file contains
 
-| Champ | Valeur |
+| Field | Value |
 | --- | --- |
-| Plugin en cours | MoodzFilter (`docs/plugins/moodzfilter/`) |
-| Phase en cours | 0 (décider) : SPEC figée, ADR licence AGPL acceptée, ADR identité proposée |
-| Gate à passer | Valider `COMPANY_NAME` et les codes plugin (ADR 0002 MoodzFilter), puis phase 1 |
-| Tâche en cours | — |
-| Version JUCE épinglée | — |
-| Budget CPU par bloc | — |
-| Défauts connus (son, perf, hôtes) | — |
-| Ordre recommandé des prochaines tâches | — |
+| Current plugin | MoodzFilter (`docs/plugins/moodzfilter/`) |
+| Current phase | 0 (decide): SPEC frozen, AGPL license ADR accepted, identity ADR proposed |
+| Gate to pass | Validate `COMPANY_NAME` and the plugin codes (MoodzFilter ADR 0002), then phase 1 |
+| Current task | — |
+| Pinned JUCE version | — |
+| CPU budget per block | — |
+| Known defects (sound, perf, hosts) | — |
+| Recommended order of next tasks | — |
 
-## Questions ouvertes du playbook
+## Open questions of the playbook
 
-* Adopter ou non le patch d'automation sample accurate de TetraDrive (à tester sur JUCE 9).
-* ~~Choix du compteur d'allocation pour les tests temps réel~~ : tranché, RealtimeSanitizer (ADR 0002).
-* Licences restant à vérifier : MTS-ESP, assets d'OB-Xf, formes d'onde AKWF (CC0 ?), provenance des IR et modèles neuronaux de BYOD.
-* Étudier les 3 bugs supposés de valentine et ceux de Frequalizer seulement si on reprend leur code (relevés par lecture, non compilés).
-* Format exact de `tests/golden/manifest.json`.
+* Whether to adopt TetraDrive's sample accurate automation patch (to be tested on JUCE 9).
+* ~~Choice of allocation counter for real-time tests~~: settled, RealtimeSanitizer (ADR 0002).
+* Licenses still to check: MTS-ESP, OB-Xf assets, AKWF waveforms (CC0?), provenance of BYOD's IRs and neural models.
+* Study the 3 suspected bugs in valentine and those in Frequalizer only if we reuse their code (found by reading, not compiled).
+* Exact format of `tests/golden/manifest.json`.

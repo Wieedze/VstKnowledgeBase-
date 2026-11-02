@@ -1,24 +1,33 @@
-# Glossaire
+# Glossary
 
-Vocabulaire partagé entre toi, les agents et le code (convention Matt Pocock : les noms de classes, fichiers et tests suivent ces termes). Un projet de plugin copie ce fichier et l'étend avec ses propres termes.
+Vocabulary shared between you, the agents and the code (Matt Pocock convention: class, file and test names follow these terms). A plugin project copies this file and extends it with its own terms.
 
-| Terme | Définition |
+| Term | Definition |
 | --- | --- |
-| **Thread audio** | Le thread de l'hôte qui appelle `processBlock`. Temps réel : il ne doit jamais attendre |
-| **Message thread** | Le thread de l'UI JUCE. Peut allouer, bloquer, faire des I/O |
-| **Bloc** | Un appel à `processBlock` : N échantillons par canal, N variable et ≤ `maxBlockSize` |
-| **Paquet interne** | Sous division fixe d'un bloc utilisée par le DSP pour être indépendant de la taille de bloc |
-| **Snapshot de paramètres** (`Params`) | Copie simple des valeurs de paramètres, faite au début de chaque bloc, seule chose que lit le DSP |
-| **APVTS** | `AudioProcessorValueTreeState`, l'arbre de paramètres de JUCE, côté `plugin/` seulement |
-| **ID de paramètre** | Identifiant stable d'un paramètre, gelé après release |
-| **État** | Ce que l'hôte sauve dans la session (`getStateInformation`), versionné |
-| **Preset** | Sous ensemble de l'état choisi par l'utilisateur ; on liste ce qui n'en fait pas partie |
-| **Migration d'état** | Chargement d'un état d'une version antérieure avec valeurs de repli |
-| **Latence** | Retard en échantillons introduit par le plugin, rapporté à l'hôte |
-| **Queue** (tail) | Durée pendant laquelle le plugin produit du son après la fin de l'entrée |
-| **Lissage** | Interpolation d'un paramètre dans le temps pour éviter le zipper noise |
-| **Oversampling** | Traitement à une fréquence multiple pour limiter l'aliasing des non linéarités |
-| **Référence golden** | Rendu WAV de référence dans `tests/golden/`, comparé à chaque PR |
-| **Signal de test** | Entrée normalisée d'un test : impulsion, sinus, sweep, bruit rose, boucle |
-| **Gate** | Condition à remplir pour passer d'une phase à la suivante |
-| **Tranche verticale** | Petit morceau de fonctionnalité qui traverse toutes les couches nécessaires et se teste seul |
+| **Audio thread** | The host thread that calls `processBlock`. Real-time: it must never wait |
+| **Message thread** | The JUCE UI thread. It can allocate, block, do I/O |
+| **Block** | One call to `processBlock`: N samples per channel, N variable and ≤ `maxBlockSize` |
+| **Internal packet** | Fixed subdivision of a block used by the DSP to be independent of the block size |
+| **Parameter snapshot** (`Params`) | Plain copy of the parameter values, made at the start of each block, the only thing the DSP reads |
+| **APVTS** | `AudioProcessorValueTreeState`, the JUCE parameter tree, on the `plugin/` side only |
+| **Parameter ID** | Stable identifier of a parameter, frozen after release |
+| **State** | What the host saves in the session (`getStateInformation`), versioned |
+| **Preset** | Subset of the state chosen by the user; we list what is not part of it |
+| **State migration** | Loading a state from an earlier version with fallback values |
+| **Latency** | Delay in samples introduced by the plugin, reported to the host |
+| **Tail** | Time during which the plugin produces sound after the input ends |
+| **Smoothing** | Interpolating a parameter over time to avoid zipper noise |
+| **Oversampling** | Processing at a multiple of the sample rate to limit aliasing from non-linearities |
+| **Golden reference** | Reference WAV render in `tests/golden/`, compared on every PR |
+| **Test signal** | Standardised input of a test: impulse, sine, sweep, pink noise, loop |
+| **Gate** | Condition to meet to move from one phase to the next |
+| **Vertical slice** | Small piece of functionality that crosses all the layers it needs and can be tested on its own |
+| **ADAA** | Antiderivative anti-aliasing: reduces the aliasing of a saturation without oversampling everything |
+| **ZDF** | Zero delay feedback: virtual analogue filter with no delay in the feedback loop |
+| **BLEP** | Correction of an oscillator's discontinuities to remove aliasing |
+| **WDF** | Wave digital filter: modelling a circuit component by component |
+| **RTSan** | clang's RealtimeSanitizer: makes a test fail if a function marked nonblocking allocates or locks |
+| **pluginval** | Tool that loads the VST3 like a host and runs a battery of tests on it |
+| **ADR** | Architecture decision record: a non-obvious decision, dated, with its reasons |
+| **Post-mortem** | Review of a finished task: what was delivered, what got stuck, what we change |
+| **Milestone** | Notable step of the project (scope frozen, gate passed, release), recorded in `docs/MILESTONES.md` |

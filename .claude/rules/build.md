@@ -1,10 +1,10 @@
-# Règles de build et CI
+# Build and CI rules
 
-* CMake ≥ 3.25, générateur Ninja par défaut.
-* JUCE en sous module, épinglé sur un tag. Les patchs JUCE vivent dans `patches/` avec une ligne d'explication chacun.
-* Dépendances tierces via CPM avec version fixée (pas de branche mouvante).
-* Cibles : `dsp` (bibliothèque sans JUCE), `<Plugin>` (formats), `Tests`, `Benchmarks`, `<Plugin>Tools` (option, off en release).
-* Version unique dans `VERSION` (ou le premier titre de `CHANGELOG.md`), propagée au binaire. La CI vérifie la cohérence.
-* CI sur chaque PR : Linux, Windows, macOS ; build, `ctest`, `tools check`, `tools compare`, pluginval 10, benchmarks, clang-format.
-* Release : un tag `vX.Y.Z` cohérent avec la version déclenche la construction des installeurs.
-* Les binaires et installeurs ne sont jamais commités ; ils sont des artefacts CI.
+* CMake ≥ 3.25, Ninja generator by default.
+* JUCE as a submodule, pinned to a tag. JUCE patches live in `patches/` with a one-line explanation each.
+* Third-party dependencies via CPM with a pinned version (no moving branch).
+* Targets: `dsp` (library without JUCE), `<Plugin>` (formats), `Tests`, `Benchmarks`, `<Plugin>Tools` (option, off in release).
+* Single version in `VERSION` (or the first heading of `CHANGELOG.md`), propagated to the binary. CI checks consistency.
+* CI on every PR: Linux, Windows, macOS; build, `ctest`, `tools check`, `tools compare`, pluginval 10, benchmarks, clang-format.
+* Release: a `vX.Y.Z` tag consistent with the version triggers the build of the installers.
+* Binaries and installers are never committed; they are CI artifacts.

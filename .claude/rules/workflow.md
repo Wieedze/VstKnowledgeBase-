@@ -1,32 +1,36 @@
-# Workflow de fin de tâche
+# End of task workflow
 
-## Commandes de vérification minimales
+## Minimum verification commands
 
 ```
 cmake --build build
 ctest --test-dir build --output-on-failure
 build/<Plugin>Tools check
 build/<Plugin>Tools compare build/renders tests/golden
-pluginval --strictness-level 10 --validate <chemin du .vst3>   # si plugin/ touché
+pluginval --strictness-level 10 --validate <path to the .vst3>   # if plugin/ touched
 ```
 
-La sortie de chaque commande est collée dans le rapport de fin de tâche. "Ça compile" sans sortie ne compte pas.
+The output of each command is pasted into the end of task report. "It compiles" without output does not count.
 
-## Affirmations chiffrées
+## Numeric claims
 
-Tout chiffre audio écrit dans un rapport, un commit ou une doc (dB, ms, échantillons de latence, % CPU) est accompagné de la commande qui le reproduit. Un chiffre sans commande est retiré.
+Any audio figure written in a report, a commit or a doc (dB, ms, samples of latency, % CPU) comes with the command that reproduces it. A figure without a command is removed.
 
-## Ordre de fin de tâche
+## End of task order
 
-1. Vérifications ci dessus, vertes.
-2. `rt-safety-reviewer` si `dsp/` ou `plugin/` touché.
+1. Checks above, green.
+2. `rt-safety-reviewer` if `dsp/` or `plugin/` touched.
 3. `code-review`.
 4. `task-verifier`.
-5. Si pass : post mortem dans `.claude/learning/`, `STATE.md` mis à jour, note de fin dans le fichier de tâche.
-6. Inscrire l'entrée dans le journal de l'index du projet (onglet Décisions de l'artefact VstKnowledgeBase, collection `journal` de sa base) : une entrée par ADR, par post mortem et par gate franchi, avec un lien vers le fichier du repo. Mettre à jour le document `projet/etat` quand la phase change. Le repo reste la source : le journal n'est qu'un index.
+5. If pass: post mortem in `.claude/learning/`, `STATE.md` updated, closing note in the task file.
+6. Run the `index-writer` agent (`.claude/agents/index-writer.md`). It updates the files the index website is built from (roadmap, milestones, state) and pushes; the site redeploys from them. The repo stays the single source.
 
 ## Commits
 
-* Un commit = un changement cohérent. Message à l'impératif.
-* Les changements de références audio sont dans leur propre commit `golden: …`.
-* Pas de commit qui mélange refactor et fonctionnalité.
+* One commit = one coherent change. Message in the imperative.
+* Audio reference changes are in their own `golden: …` commit.
+* No commit that mixes refactor and feature.
+
+## End of session
+
+Before ending a work session, run `index-writer` once so the roadmap and `STATE.md` reflect where the work stopped.

@@ -1,26 +1,26 @@
-# NNNN — Titre court à l'impératif
+# NNNN — Short title in the imperative
 
-**Phase** : 0 / 1 / 2 / 3 / 4 / 5
-**Couche** : dsp / plugin / ui / build / docs
-**Dépend de** : NNNN, NNNN
+**Phase**: 0 / 1 / 2 / 3 / 4 / 5
+**Layer**: dsp / plugin / ui / build / docs
+**Depends on**: NNNN, NNNN
 
-## Objectif
+## Goal
 
-Une phrase : le comportement observable à la fin.
+One sentence: the observable behaviour at the end.
 
-## Comportement attendu (mesurable)
+## Expected behaviour (measurable)
 
-| Signal de test | Paramètres | Résultat attendu | Tolérance |
+| Test signal | Parameters | Expected result | Tolerance |
 | --- | --- | --- | --- |
-| Sinus 1 kHz, −12 dBFS | gain = +6 dB | sortie à −6 dBFS | ± 0,01 dB |
+| 1 kHz sine, −12 dBFS | gain = +6 dB | output at −6 dBFS | ± 0.01 dB |
 
-## Hors périmètre
+## Out of scope
 
-Ce que cette tâche ne fait **pas**, même si c'est tentant. Tout ajout va dans `FUTURE.md`.
+What this task does **not** do, even if it is tempting. Any addition goes into `FUTURE.md`.
 
 * …
 
-## Règles à charger
+## Rules to load
 
 * `.claude/rules/…`
 
@@ -30,14 +30,14 @@ Ce que cette tâche ne fait **pas**, même si c'est tentant. Tout ajout va dans 
 
 ## Definition of done
 
-* [ ] Tests écrits avant le code, rouges puis verts.
-* [ ] `cmake --build build` sans warning nouveau.
-* [ ] `ctest --test-dir build` vert.
-* [ ] `tools check` vert ; `tools compare` vert ou référence changée par commit `golden:` justifié.
-* [ ] pluginval 10 vert si `plugin/` touché.
-* [ ] `rt-safety-reviewer` passé si `dsp/` ou `plugin/` touché.
-* [ ] `GLOSSARY.md` à jour si un terme nouveau apparaît.
-* [ ] ADR écrit si une décision non évidente a été prise.
-* [ ] `task-verifier` : pass. Post mortem écrit, `STATE.md` mis à jour.
+* [ ] Tests written before the code, red then green.
+* [ ] `cmake --build build` with no new warning.
+* [ ] `ctest --test-dir build` green.
+* [ ] `tools check` green; `tools compare` green or reference changed by a justified `golden:` commit.
+* [ ] pluginval 10 green if `plugin/` touched.
+* [ ] `rt-safety-reviewer` passed if `dsp/` or `plugin/` touched.
+* [ ] `GLOSSARY.md` up to date if a new term appears.
+* [ ] ADR written if a non-obvious decision was made.
+* [ ] `task-verifier`: pass. Post-mortem written, `STATE.md` updated.
 
-## Note de fin (remplie par le task-verifier)
+## End note (filled by the task-verifier)

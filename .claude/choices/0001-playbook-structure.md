@@ -1,22 +1,22 @@
-# 0001 — Structure du playbook reprise d'ARP, enrichie des skills Matt Pocock
+# 0001 — Playbook structure taken from ARP, enriched with Matt Pocock's skills
 
-**Date** : 2026-11-02
-**Statut** : acceptée
+**Date**: 2026-11-02
+**Status**: accepted
 
-## Contexte
+## Context
 
-La méthode agentique d'ARP (routeur `CLAUDE.md`, règles par domaine, ADR, post mortems, `task-verifier` obligatoire) fonctionne. Le développement de plugins en C++ ajoute une classe de bugs que les tests unitaires ne voient pas (temps réel) et un risque de dérive de périmètre élevé.
+ARP's agentic method (`CLAUDE.md` router, rules per domain, ADRs, post mortems, mandatory `task-verifier`) works. Developing plugins in C++ adds a class of bugs that unit tests do not see (real time) and a high risk of scope drift.
 
-## Options considérées
+## Options considered
 
-1. Reprendre ARP tel quel.
-2. Adopter seulement les skills de Matt Pocock (grilling, spec, tickets, TDD).
-3. Combiner : structure ARP pour le repo, skills Pocock pour le flux de travail, plus des ajouts propres à l'audio.
+1. Take ARP as is.
+2. Adopt only Matt Pocock's skills (grilling, spec, tickets, TDD).
+3. Combine: ARP structure for the repo, Pocock skills for the workflow, plus audio-specific additions.
 
-## Décision
+## Decision
 
-Option 3. Ajouts propres à l'audio : agent `rt-safety-reviewer`, `task-verifier` qui exécute build, tests, outil headless et pluginval, références golden protégées, phases fermées par des gates, `GLOSSARY.md` au lieu de laisser le vocabulaire émerger.
+Option 3: ARP structure for the repo, Pocock skills for the workflow, plus audio-specific additions: `rt-safety-reviewer` agent, `task-verifier` that runs build, tests, headless tool and pluginval, protected golden references, phases closed by gates, `GLOSSARY.md` instead of letting the vocabulary emerge.
 
-## Conséquences
+## Consequences
 
-Un peu plus de cérémonie par tâche, compensée par des tâches courtes. Le playbook doit rester la source : une leçon apprise dans un plugin remonte ici.
+A bit more ceremony per task, offset by short tasks. The playbook must remain the source: a lesson learned in a plugin is brought back here.

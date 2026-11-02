@@ -1,64 +1,64 @@
 # Architecture
 
-## Trois couches, une seule direction de dépendance
+## Three layers, one direction of dependency
 
 ```
 ui/  ──►  plugin/  ──►  dsp/
-(JUCE GUI)  (JUCE audio_processors)  (C++ standard, aucune dépendance JUCE)
+(JUCE GUI)  (JUCE audio_processors)  (standard C++, no JUCE dependency)
 ```
 
-| Couche | Contenu | Dépend de | Testée par |
+| Layer | Content | Depends on | Tested by |
 | --- | --- | --- | --- |
-| `dsp/` | Filtres, oscillateurs, enveloppes, moteur. Classes avec `prepare(sampleRate, maxBlockSize)`, `reset()`, `process(span)` | Rien d'autre que la STL | Catch2, sans JUCE |
-| `plugin/` | `AudioProcessor`, layout des paramètres (APVTS), snapshot de paramètres, état et migration, latence | `dsp/`, JUCE | Catch2 avec JUCE, pluginval |
-| `ui/` | `AudioProcessorEditor`, composants, LookAndFeel | `plugin/` (lecture seule via attachments) | Captures headless, revue manuelle |
-| `tools/` | Binaire headless : render, check, bench, snapshot | `dsp/`, `plugin/` | Lui même un test |
+| `dsp/` | Filters, oscillators, envelopes, engine. Classes with `prepare(sampleRate, maxBlockSize)`, `reset()`, `process(span)` | Nothing but the STL | Catch2, without JUCE |
+| `plugin/` | `AudioProcessor`, parameter layout (APVTS), parameter snapshot, state and migration, latency | `dsp/`, JUCE | Catch2 with JUCE, pluginval |
+| `ui/` | `AudioProcessorEditor`, components, LookAndFeel | `plugin/` (read only via attachments) | Headless captures, manual review |
+| `tools/` | Headless binary: render, check, bench, snapshot | `dsp/`, `plugin/` | Itself a test |
 
-Règle : `dsp/` ne contient aucun `#include <juce_...>`. Un test CMake le vérifie (voir [04_TESTS](04_TESTS.md)).
+Rule: `dsp/` contains no `#include <juce_...>`. A CMake test checks it (see [04_TESTS](04_TESTS.md)).
 
-## Flux des paramètres
+## Parameter flow
 
-1. L'hôte et l'UI écrivent dans l'APVTS (atomics).
-2. Au début de chaque `processBlock`, la couche `plugin/` lit les valeurs et remplit une structure simple `Params` (copie, pas de référence).
-3. Le DSP ne reçoit que `Params`. Il ne connaît ni l'APVTS ni les IDs.
-4. Lissage (`SmoothedValue` ou équivalent maison dans `dsp/`) pour tout paramètre qui produit un zipper noise.
+1. The host and the UI write into the APVTS (atomics).
+2. At the start of each `processBlock`, the `plugin/` layer reads the values and fills a plain `Params` structure (a copy, not a reference).
+3. The DSP only receives `Params`. It knows neither the APVTS nor the IDs.
+4. Smoothing (`SmoothedValue` or an in-house equivalent in `dsp/`) for every parameter that produces zipper noise.
 
-Données plus grosses qu'un atomic (table d'onde, IR, sample) : construites sur un thread de fond, livrées au thread audio par pointeur atomique ou FIFO lock free, libérées hors du thread audio.
+Data larger than an atomic (wavetable, IR, sample): built on a background thread, delivered to the audio thread by atomic pointer or lock-free FIFO, freed outside the audio thread.
 
-## Arborescence type (à partir de Pamplejuce)
+## Typical tree (starting from Pamplejuce)
 
 ```
-monplugin/
+myplugin/
 ├── CMakeLists.txt
 ├── VERSION
 ├── CHANGELOG.md
 ├── CLAUDE.md, GLOSSARY.md, FUTURE.md
-├── JUCE/                    sous module, tag épinglé
-├── cmake/                   sous module cmake-includes de Pamplejuce
-├── patches/                 patchs JUCE versionnés
+├── JUCE/                    submodule, pinned tag
+├── cmake/                   Pamplejuce's cmake-includes submodule
+├── patches/                 versioned JUCE patches
 ├── source/
-│   ├── dsp/                 C++ pur
+│   ├── dsp/                 pure C++
 │   ├── plugin/              PluginProcessor, Parameters, State
-│   └── ui/                  PluginEditor, composants
+│   └── ui/                  PluginEditor, components
 ├── tests/
-│   ├── dsp/                 tests unitaires sans JUCE
-│   ├── plugin/              tests avec JUCE (état, paramètres)
-│   └── golden/              rendus de référence (WAV) + manifeste
-├── tools/                   binaire headless
+│   ├── dsp/                 unit tests without JUCE
+│   ├── plugin/              tests with JUCE (state, parameters)
+│   └── golden/              reference renders (WAV) + manifest
+├── tools/                   headless binary
 ├── benchmarks/
 ├── docs/
-│   ├── SPEC.md              une page
-│   ├── CODEMAP.md           chemin → rôle, comme Drum Foundry
+│   ├── SPEC.md              one page
+│   ├── CODEMAP.md           path → role, like Drum Foundry
 │   └── tasks/
 └── .claude/
 ```
 
-## Invariants à poser dès le début
+## Invariants to set from the start
 
-* **Latence fixe et rapportée** via `setLatencySamples`, testée.
-* **Indépendance à la taille de bloc** : même sortie pour des blocs de 1, 32, 512 et 4096 échantillons (test).
-* **Sortie finie** : aucune NaN ni Inf, quels que soient les paramètres (test balayant les extrêmes).
-* **Silence en entrée = silence en sortie** pour un effet sans bruit propre, après la queue.
-* **Round trip d'état** : `getStateInformation` puis `setStateInformation` redonne les mêmes paramètres.
-* **Migration d'état** : chaque état sauvé porte une version ; un ancien état se recharge avec des valeurs de repli documentées.
-* **Invariants de paramètres** explicites (ex. crossovers ordonnés chez TetraDrive) et testés.
+* **Fixed and reported latency** via `setLatencySamples`, tested.
+* **Block size independence**: same output for blocks of 1, 32, 512 and 4096 samples (test).
+* **Finite output**: no NaN or Inf, whatever the parameters (test sweeping the extremes).
+* **Silence in = silence out** for an effect with no self-noise, after the tail.
+* **State round trip**: `getStateInformation` then `setStateInformation` gives back the same parameters.
+* **State migration**: each saved state carries a version; an old state reloads with documented fallback values.
+* **Explicit parameter invariants** (e.g. ordered crossovers in TetraDrive), tested.

@@ -1,11 +1,11 @@
-# Règles de test
+# Testing rules
 
-* **TDD** : le test qui décrit le comportement est écrit et vu rouge avant le code. Une tranche verticale à la fois.
-* Un test DSP nomme son signal d'entrée, ses paramètres, la valeur attendue, la tolérance, et d'où vient la valeur attendue.
-* Pas de test qui reproduit l'implémentation pour calculer l'attendu.
-* Tolérances explicites, jamais d'égalité exacte sur des flottants.
-* Les tests DSP tournent sans JUCE et en moins de quelques secondes.
-* Un bug corrigé = un test qui échouait sur ce bug.
-* **Références audio (`tests/golden/`)** : un agent ne les régénère jamais pour faire passer un test. Changement = commit séparé `golden: <raison>`, validé par l'humain après écoute.
-* pluginval strictness 10 avant toute PR qui touche `plugin/`.
-* Un test désactivé porte un lien vers une tâche qui le réactive.
+* **TDD**: the test that describes the behavior is written and seen red before the code. One vertical slice at a time.
+* A DSP test names its input signal, its parameters, the expected value, the tolerance, and where the expected value comes from.
+* No test that reproduces the implementation to compute the expected value.
+* Explicit tolerances, never exact equality on floats.
+* DSP tests run without JUCE and in less than a few seconds.
+* A fixed bug = a test that failed on that bug.
+* **Audio references (`tests/golden/`)**: an agent never regenerates them to make a test pass. Change = separate commit `golden: <reason>`, validated by the human after listening.
+* pluginval strictness 10 before any PR that touches `plugin/`.
+* A disabled test carries a link to a task that re-enables it.
