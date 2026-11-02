@@ -7,6 +7,7 @@
 | Point de départ | Template [Pamplejuce](https://github.com/sudara/pamplejuce) | Build, Catch2, pluginval, CI, signature déjà réglés ; il fournit même un `CLAUDE.md`/`AGENTS.md` | [01](01_REFERENCES.md) |
 | Framework | JUCE 9.x en sous module git, version épinglée sur un tag | JUCE 9 est sorti, TetraDrive est déjà en 9.0.4, Pamplejuce suit JUCE 9 | [02](02_TOOLCHAIN.md) |
 | Langage | C++23 (C++20 minimum) | Standard du template | [02](02_TOOLCHAIN.md) |
+| Format | VST3 uniquement (ni AU, ni CLAP, ni Standalone) | Un seul format à construire, valider et supporter | [ADR 0003](../.claude/choices/0003-vst3-uniquement.md) |
 | Build | CMake ≥ 3.25 + Ninja, dépendances via CPM | Un seul système pour Windows, macOS, Linux et la CI | [02](02_TOOLCHAIN.md) |
 | Poste de dev | Build Windows natif (MSVC) pour tester dans le DAW ; WSL2/Linux pour les tests DSP rapides et la CI | Un VST3 Linux ne se charge pas dans un DAW Windows | [02](02_TOOLCHAIN.md) |
 | Architecture | Trois couches : `dsp/` sans JUCE, `plugin/` (processeur, paramètres, état), `ui/` | Le DSP se teste sans hôte et sans DAW | [03](03_ARCHITECTURE.md) |

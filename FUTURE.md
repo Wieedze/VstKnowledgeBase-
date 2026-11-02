@@ -2,6 +2,10 @@
 
 Demandé ou imaginé, volontairement pas construit maintenant. Une ligne par idée, avec la date et le contexte. Une idée sort d'ici seulement par une SPEC ou un amendement de SPEC.
 
+## Formats (hors périmètre, ADR 0003)
+
+* 2026-11-02 : AU / AUv3 (Logic Pro), CLAP (clap-juce-extensions, déjà étudié dans `docs/references/melatonin-et-clap.md`), Standalone. Chacun demanderait sa propre validation en CI.
+
 ## Playbook
 
 * 2026-11-02 : un repo template "plugin vierge" prêt à cloner (Pamplejuce + ce playbook + cibles dsp/plugin/ui/tools déjà en place).

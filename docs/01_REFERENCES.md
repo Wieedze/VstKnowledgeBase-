@@ -1,6 +1,6 @@
 # Projets de référence
 
-Analysés le 2026-11-02 à partir de leurs README publics. Le point commun qui compte : **le DSP est testable sans le plugin.** C'est la première chose à copier.
+Analysés le 2026-11-02, d'abord à partir de leurs README, puis en lisant le code. Le tableau ci dessous a été corrigé après lecture du code ; l'étude détaillée est dans [`references/drum-foundry.md`](references/drum-foundry.md) et [`references/tetradrive.md`](references/tetradrive.md). Point clé : **seul TetraDrive teste son DSP sans JUCE.** C'est la première chose à copier.
 
 ## Les deux projets de départ
 
@@ -10,10 +10,11 @@ Analysés le 2026-11-02 à partir de leurs README publics. Le point commun qui c
 | JUCE | 8.0.15 dans `libs/JUCE`, téléchargé par CMake si le dossier est vide | 9.0.4 vendored dans `external/JUCE`, avec un patch VST3 |
 | Build | CMake + Ninja, option `DRUMFOUNDRY_BUILD_TOOLS` | CMake, générateurs Visual Studio ou Xcode |
 | Formats | VST3, AU, Standalone (macOS) ; VST3, Standalone (Windows) | VST3 (Windows) ; VST3, AU (macOS) |
-| Tests | Binaire `DrumFoundryTools check` : NaN, round trip d'état, indépendance à la taille de bloc, undo, clipper | `tests/` headless, activés par `-DTD_BUILD_TESTS=ON`, sans dépendance JUCE |
-| Validation | pluginval strictness 10, `auval` pour l'AU | Non documentée |
+| DSP séparé de JUCE | Non : 33 des 37 fichiers de `src/dsp` utilisent JUCE | Oui : `src/` compile sans JUCE |
+| Tests | Binaire `DrumFoundryTools check` (NaN, round trip d'état, taille de bloc, undo, clipper), pas de ctest | `tests/` headless, activés par `-DTD_BUILD_TESTS=ON`, sans dépendance JUCE |
+| Validation | pluginval strictness 10 et `auval` en commandes **manuelles** (README), pas en CI | Aucune |
 | Versioning | Version dans `CMakeLists.txt` ; la CI échoue si le README ne correspond pas | Version lue dans le premier titre de `CHANGELOG.md` |
-| CI / release | GitHub Actions : un tag `vX.Y.Z` construit installeurs et release | Non visible |
+| CI / release | GitHub Actions : un tag `vX.Y.Z` construit installeurs et release ; ni tests, ni pluginval, ni `tools check`, pas de Linux | **Aucune CI** |
 | Licence | AGPL v3 + NOTICE | AGPL v3 |
 
 ### À reprendre de Drum Foundry
@@ -22,8 +23,8 @@ Analysés le 2026-11-02 à partir de leurs README publics. Le point commun qui c
 2. **Un snapshot de paramètres par bloc.** `DrumParams` est une copie simple que le DSP lit à chaque bloc ; le DSP ne lit jamais l'arbre de paramètres JUCE directement.
 3. **Zéro blocage sur le thread audio.** Les éditions d'enveloppe passent par un `try_lock` (l'audio n'attend jamais) ; les samples sont décodés en arrière plan puis livrés sans blocage ; la réverbe "Natural" reconstruit sa réponse impulsionnelle sur un thread de fond puis fait un crossfade.
 4. **Latence fixe et déclarée**, identique quel que soit l'ordre de la chaîne d'effets ou le mode de sortie.
-5. **Traitement par paquets fixes de 32 échantillons** pour que le son soit le même quelle que soit la taille de bloc de l'hôte, et un test qui le prouve.
-6. **Changement d'ordre de la chaîne sans clic** : fade out, permutation, fade in sur environ 20 ms.
+5. **Traitement par paquets fixes de 32 échantillons**, mais seulement dans la réverbe Cloud (FIFO interne). Les LFO partent du début de chaque bloc hôte et dépendent donc encore de la taille de bloc ; leur test ne route aucun LFO.
+6. **Changement d'ordre de la chaîne sans clic** : fondu de sortie de 10 ms, silence, reset des modules, fondu d'entrée de 10 ms.
 7. **Undo par gestes utilisateur** : l'automation et le rappel de session par l'hôte ne créent pas d'étape d'undo, ils déplacent la base.
 8. **Une carte du code dans le README** : tableau chemin → rôle. Très utile pour un agent qui découvre le repo.
 9. **Sources DSP citées** (Giannoulis, Massberg et Reiss, JAES 2012 pour les compresseurs ; RBJ cookbook ; filtres de Vicanek) et mention qu'aucun code tiers n'a été copié.
@@ -74,7 +75,7 @@ Liste complète, tenue à jour : [awesome-juce](https://github.com/sudara/awesom
 | --- | --- |
 | [pluginval](https://github.com/Tracktion/pluginval) | Valide le binaire comme un hôte : chargement, états, automation, tailles de bloc. Niveau 10 = le plus strict |
 | [melatonin_inspector](https://github.com/sudara/melatonin_inspector) | Inspecte et édite l'UI JUCE en direct |
-| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | Affiche un buffer audio en ASCII dans la console et les tests ; pratique pour un agent qui ne peut pas écouter |
+| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | Affiche un buffer audio en ASCII dans la console et les tests ; dépend de `juce_dsp`, donc seulement dans les tests de `plugin/` |
 | [melatonin_perfetto](https://github.com/sudara/melatonin_perfetto) | Profiling du thread audio avec Perfetto |
 | [DSP-Testbench](https://github.com/AndrewJJ/DSP-Testbench) | Banc de test DSP : sources, routage, analyse |
 | [juce-plugin-ci](https://github.com/maxwellpollack/juce-plugin-ci) | CI GitHub Actions plus légère que Pamplejuce |

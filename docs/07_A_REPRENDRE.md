@@ -2,7 +2,9 @@
 
 Principe : **tout ce qu'on n'a pas besoin de coder nous mêmes est un gain.** Moins de code à écrire, à tester et à maintenir, et du code déjà éprouvé en production. On ne code soi même que ce qui fait l'identité sonore du plugin.
 
-État au 2026-11-02. Les licences sont celles indiquées par chaque projet ; les lignes marquées *à vérifier* doivent être confirmées dans le fichier LICENSE avant usage.
+État au 2026-11-02. Licences vérifiées dans les fichiers LICENSE et les en têtes, code lu dans les dépôts. Le détail, avec chemins `fichier:ligne`, est dans les fiches de [`docs/references/`](references/).
+
+Notre format est **VST3 uniquement** (ADR 0003).
 
 ## La question qui décide de tout : la licence du plugin
 
@@ -45,79 +47,100 @@ Limite : ces classes dépendent de JUCE, donc elles vivent dans `plugin/` ou dan
 
 ## 3. Le DSP : bibliothèques tierces
 
-| Bibliothèque | Licence | Ce qu'elle apporte | Utilisable si plugin fermé |
-| --- | --- | --- | --- |
-| [chowdsp_utils](https://github.com/Chowdhury-DSP/chowdsp_utils) modules BSD : `chowdsp_math`, `chowdsp_simd`, `chowdsp_buffers`, `chowdsp_data_structures` | BSD | Maths vectorielles, SIMD (xsimd), buffers, buffer circulaire, allocateurs arena/pool | Oui |
-| chowdsp_utils modules GPL : `chowdsp_filters`, `chowdsp_eq`, `chowdsp_waveshapers`, `chowdsp_sources`, `chowdsp_reverb`, `chowdsp_compressor`, `chowdsp_dsp_utils`, `chowdsp_modal_dsp` | GPL v3 | Filtres d'ordre élevé, EQ (dont phase linéaire), clippers ADAA anti aliasing, wavefolder, oscillateurs anti aliasés, FDN façon Dattorro, compresseur, pitch shifter, rééchantillonneurs, filtres modaux | Non (licence non GPL à demander à l'auteur) |
-| [Gin](https://github.com/FigBug/Gin) `gin_dsp` | BSD 3 | Oscillateurs wavetable, filtres, compresseur, réverbe, ADSR, LFO, matrice de modulation | Oui |
-| [Signalsmith DSP](https://github.com/Signalsmith-Audio/dsp) | MIT *à vérifier* | Délais, filtres, rééchantillonnage, FFT, sans dépendance JUCE : compatible avec `dsp/` pur | Oui |
-| [sst-basic-blocks](https://github.com/surge-synthesizer/sst-basic-blocks) (Surge) | GPL v3, sauf trois fichiers MIT : `LanczosResampler.h`, `HilbertTransform.h`, `EllipticBlepOscillators.h` | Blocs de base de Surge ; les trois fichiers MIT sont réutilisables partout | Seulement les 3 fichiers MIT |
-| [Cloud Seed Core](https://github.com/GhostNoteAudio/CloudSeedCore) | MIT | Réverbe algorithmique à 8 lignes modulées, déjà utilisée par Drum Foundry | Oui |
-| [Airwindows](https://github.com/airwindows/airwindows) / [airwindows-juce](https://github.com/hollance/airwindows-juce) | MIT | Des centaines d'algorithmes (saturations, consoles, compresseurs, réverbes) | Oui |
-| [HIIR](http://ldesoras.free.fr/prod.html) (Laurent de Soras) | WTFPL *à vérifier* | Oversampling demi bande polyphase IIR, très efficace (celui que TetraDrive décrit) | Oui |
+| Bibliothèque | Licence vérifiée | Ce qu'elle apporte | Sans JUCE (`dsp/`) | Plugin fermé | Fiche |
+| --- | --- | --- | --- | --- | --- |
+| [Signalsmith DSP](https://github.com/Signalsmith-Audio/dsp) | MIT | Délais, filtres, rééchantillonnage, FFT, enveloppes. **Bibliothèque DSP par défaut de `dsp/`** | Oui, header only | Oui | [temps réel et DSP](references/bibliotheques-temps-reel-et-dsp.md) |
+| [HIIR](http://ldesoras.free.fr/prod.html) | WTFPL v2 | Oversampling demi bande polyphase IIR (2x en cascade) autour des non linéarités | Oui, header only | Oui | idem |
+| chowdsp_utils, modules BSD : `chowdsp_math`, `chowdsp_simd`, `chowdsp_buffers`, `chowdsp_data_structures` | BSD 3 | Maths vectorielles, SIMD (xsimd), buffers, buffer circulaire, allocateurs | Oui, mais ils définissent leur propre namespace `juce` : ne pas les exposer dans un en tête public de `dsp/` | Oui | [chowdsp_utils](references/chowdsp-utils.md) |
+| chowdsp_utils, modules GPL : `filters`, `eq`, `waveshapers`, `sources`, `reverb`, `compressor`, `dsp_utils`, `modal_dsp`, **`dsp_data_structures`** | GPL v3 | Filtres d'ordre élevé, EQ (dont phase linéaire), clippers ADAA, wavefolder, oscillateurs anti aliasés, FDN, compresseur, pitch shifter, `RealtimeLatestObject` | Variable | Non | idem |
+| [Cloud Seed Core](https://github.com/GhostNoteAudio/CloudSeedCore) | MIT | Réverbe algorithmique à 8 lignes modulées | Oui | Oui | [temps réel et DSP](references/bibliotheques-temps-reel-et-dsp.md) |
+| [Airwindows](https://github.com/airwindows/airwindows) via **airwin2rack** (`src/autogen_airwin/`) | MIT | Des centaines d'algorithmes (saturations, consoles, compresseurs, réverbes), sans SDK VST2 ni JUCE | Oui | Oui | idem |
+| [sst-basic-blocks](https://github.com/surge-synthesizer/sst-basic-blocks) | GPL v3, sauf `LanczosResampler.h`, `HilbertTransform.h`, `EllipticBlepOscillators.h` en MIT | Blocs de base de Surge | Oui | Seulement les 3 fichiers MIT | [Surge et sst](references/surge-et-sst.md) |
+| [Gin](https://github.com/FigBug/Gin) `gin_dsp` | BSD 3 | Oscillateurs wavetable, filtres, compresseur, réverbe, ADSR, LFO | **Non** (dépend de `juce_dsp`) : va dans `plugin/` | Oui | [Gin](references/gin.md) |
+
+**Réserves à connaître avant de brancher :**
+
+1. **Cloud Seed Core alloue sur le thread audio** quand on change Decay, Size, Mod ou les graines (`UpdateLines` construit des `std::vector`), utilise `std::rand()` et pèse environ 64 Mo par instance (estimation d'après les constantes du code, non mesurée). À vendoriser dans `third_party/` avec un `PATCHES.md`, en complétant le patch de Drum Foundry qui laisse encore une allocation sur changement de graine. Paramètres de graine non automatisables.
+2. **airwindows-juce n'est pas la bonne entrée** : 4 portages seulement, pas de fichier LICENSE, plus de commit depuis janvier 2024. Prendre le fichier de l'algorithme dans airwin2rack, l'envelopper dans une classe `dsp/` avec lissage et graine déterministe, et citer Airwindows.
+3. **Gin et chowdsp ne sont pas testés de la même façon sur JUCE 9** : Gin suit JUCE develop (commits JUCE 9, pas de tag, épingler un commit) ; chowdsp n'est testé que sur JUCE 8.0.10.
 
 ## 4. Paramètres, état, presets : ne pas réinventer
 
-| Bibliothèque | Licence | Remplace |
-| --- | --- | --- |
-| `chowdsp_parameters` | BSD | Création des paramètres, paramètres de redirection |
-| `chowdsp_plugin_state` | BSD | Remplaçant de l'APVTS, avec attachments UI |
-| `chowdsp_presets_v2` | BSD | Gestionnaire de presets complet (sauvegarde, navigation, tags) |
-| `chowdsp_serialization`, `chowdsp_json` | BSD | Sérialisation JSON/XML de l'état |
-| `chowdsp_version` | BSD | Comparaison de versions pour la migration d'état |
-| `gin_plugin` | BSD 3 | Processeur étendu, paramètres modulables, matrice de modulation, navigateur de patchs, composants knob/ADSR/LFO/MSEG |
+| Bibliothèque | Licence | Remplace | Réserve |
+| --- | --- | --- | --- |
+| `chowdsp_parameters` | BSD 3 | Création des paramètres, paramètres de redirection | |
+| `chowdsp_plugin_state` | BSD 3 **qui inclut un fichier GPL** (`DeferredMainThreadAction.h`) | Remplaçant de l'APVTS, avec attachments UI | Plugin fermé : patch ou accord de l'auteur. `deserialize` est différé sur le message thread : nos tests d'état et `tools/` doivent tourner sur ce thread |
+| `chowdsp_presets_v2` | BSD 3 **qui inclut un fichier GPL** (`ProgramAdapter.h`) | Gestionnaire de presets (sauvegarde, navigation, tags) | Même réserve |
+| `chowdsp_version` | BSD 3 | Comparaison de versions pour la migration d'état | |
+| `chowdsp_serialization`, `chowdsp_json` | BSD 3 | Sérialisation JSON/XML | |
+| `gin_plugin` | BSD 3 | Processeur étendu, paramètres modulables, matrice de modulation, navigateur de patchs, composants knob/ADSR/LFO/MSEG | Voir ci dessous |
 
-Pour un synthé avec modulation, `gin_plugin` évite d'écrire la matrice de modulation et son UI, la partie qui a le plus dérivé dans le projet multi FX précédent.
+**Gin : bonne base, pas à brancher tel quel.** C'est un cadre complet qu'on adopte en bloc à la place de l'APVTS. Quatre écarts avec nos règles, relevés dans le code (détail dans [la fiche](references/gin.md)) :
+
+1. La `ModMatrix` **n'est pas sûre en temps réel** : ajouter ou retirer une route, ou charger un état, réalloue sans verrou pendant que l'audio lit. À corriger (par exemple routes publiées via `farbot::RealtimeObject`) avant usage.
+2. L'état n'a pas de version et ne sauve que les valeurs différentes du défaut : incompatible avec `.claude/rules/juce.md` sans surcouche.
+3. Un vérificateur de mises à jour et de news réseau est actif par défaut : à désactiver.
+4. LFO et `WTOscillator` utilisent un aléatoire non seedable : les rendus de test ne sont pas reproductibles.
 
 ## 5. Temps réel : primitives éprouvées
 
-| Bibliothèque | Licence | Apporte |
+| Bibliothèque | Licence vérifiée | Apporte |
 | --- | --- | --- |
-| [farbot](https://github.com/hogliux/farbot) | MIT | `RealtimeObject` (partager un objet entre l'UI et l'audio), `fifo` configurable sans lock, `AsyncCaller` (déporter une libération ou un log hors du thread audio) |
-| [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) | BSD *à vérifier* | File SPSC lock free, suggérée par Pamplejuce |
-| [RealtimeSanitizer (RTSan)](https://clang.llvm.org/docs/RealtimeSanitizer.html) | LLVM | Détection automatique des appels non temps réel : on marque `processBlock` `[[clang::nonblocking]]`, on compile avec `-fsanitize=realtime`, et tout `malloc`, `free` ou `mutex` appelé depuis là fait échouer le programme. **Remplace l'allocateur instrumenté qu'on prévoyait d'écrire** (voir `docs/04_TESTS.md`) |
+| [farbot](https://github.com/hogliux/farbot) | MIT | `RealtimeObject` (partager un objet entre l'UI et l'audio), `fifo` sans lock, `AsyncCaller` (déporter une libération ou un log hors du thread audio) |
+| [readerwriterqueue](https://github.com/cameron314/readerwriterqueue) | BSD 2 clauses (le sémaphore de `atomicops.h` est sous zlib) | File SPSC lock free, pour les flux audio vers UI (mètres, analyseur). `AbstractFifo` de JUCE reste l'alternative sans dépendance |
+| [RealtimeSanitizer (RTSan)](https://clang.llvm.org/docs/RealtimeSanitizer.html) | LLVM | Détection automatique des appels non temps réel depuis une fonction `[[clang::nonblocking]]` |
 
-RTSan est le plus gros gain de cette section : c'est l'outil qui vérifie mécaniquement la règle n°1 de `.claude/rules/realtime-audio.md`. À mettre dans un job CI Linux avec clang.
+**RTSan remplace l'allocateur instrumenté qu'on prévoyait d'écrire**, avec trois limites : il demande **clang 20 ou plus**, ne marche **ni sous Windows ni avec AppleClang**, et **pluginval ne le couvre pas**. On le lance donc dans un job CI Linux, sur nos propres exécutables de test qui exercent `processBlock`, y compris les changements de paramètres pendant la lecture. Pamplejuce a déjà l'option `WITH_REALTIME_SANITIZER` dans `cmake/Sanitizers.cmake` ; il manque `include(Sanitizers)` et le job (exemple dans [la fiche Pamplejuce](references/pamplejuce.md)).
 
 ## 6. UI : composants et outils
 
-| Bibliothèque | Licence | Apporte |
-| --- | --- | --- |
-| [melatonin_inspector](https://github.com/sudara/melatonin_inspector) | MIT *à vérifier* | Inspecteur d'UI en direct, déjà dans Pamplejuce |
-| melatonin_blur | MIT *à vérifier* | Ombres et flous rapides |
-| [foleys_gui_magic](https://github.com/ffAudio/foleys_gui_magic) | *à vérifier* (LICENSE.md) | Éditeur d'UI en glisser déposer, feuille de style, analyseurs et mètres prêts |
-| `gin_gui` | BSD 3 | Composants de synthé, layouts JSON |
-| `chowdsp_gui`, `chowdsp_visualizers` | GPL v3 | LookAndFeel, binding paramètres, courbe d'EQ |
+| Bibliothèque | Licence vérifiée | Apporte | Réserve |
+| --- | --- | --- | --- |
+| [melatonin_inspector](https://github.com/sudara/melatonin_inspector) | MIT | Inspecteur d'UI en direct, déjà dans Pamplejuce | |
+| [melatonin_blur](https://github.com/sudara/melatonin_blur) | MIT, contient un fichier BSD 3 de Gin | Ombres et flous rapides | |
+| [foleys_gui_magic](https://github.com/ffAudio/foleys_gui_magic) | BSD 3 | Éditeur d'UI en XML avec édition en direct, analyseurs et mètres prêts | Remplace l'APVTS par `MagicProcessorState` : décision par ADR, pas par défaut |
+| `gin_gui` | BSD 3 | Composants de synthé, layouts JSON | |
+| `chowdsp_gui`, `chowdsp_visualizers` | GPL v3 | LookAndFeel, binding paramètres, courbe d'EQ | |
 
 ## 7. Divers
 
-| Bibliothèque | Licence | Apporte |
-| --- | --- | --- |
-| [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions) | MIT *à vérifier* | Format CLAP en plus du VST3, déjà dans Pamplejuce |
-| [nlohmann/json](https://github.com/nlohmann/json) | MIT | JSON |
-| [melatonin_perfetto](https://github.com/sudara/melatonin_perfetto) | MIT *à vérifier* | Profiling du thread audio |
-| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | MIT | Buffers audio en ASCII dans les tests |
+| Bibliothèque | Licence vérifiée | Apporte | Réserve |
+| --- | --- | --- | --- |
+| [clap-juce-extensions](https://github.com/free-audio/clap-juce-extensions) | MIT | Format CLAP | **Non utilisé** (VST3 uniquement, ADR 0003) : à retirer du template |
+| [nlohmann/json](https://github.com/nlohmann/json) | MIT | JSON | |
+| [melatonin_perfetto](https://github.com/sudara/melatonin_perfetto) | MIT déclaré dans l'en tête seulement (pas de fichier LICENSE) ; télécharge le SDK Perfetto en Apache 2.0 | Profiling du thread audio | |
+| [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) | MIT | Buffers audio en ASCII | **Dépend de `juce_dsp`** : utilisable dans les tests de `plugin/`, pas dans les tests DSP sans JUCE |
 
 ## 8. Les patterns à reprendre des projets de référence
 
-Ces idées ne sont pas du code à copier (Drum Foundry et TetraDrive sont AGPL) mais des choix de conception à reproduire. Une idée n'est pas protégée ; seul le code l'est.
+Ces idées ne sont pas du code à copier (Drum Foundry et TetraDrive sont AGPL) mais des choix de conception à reproduire. Une idée n'est pas protégée ; seul le code l'est. Vérifié dans le code ([Drum Foundry](references/drum-foundry.md), [TetraDrive](references/tetradrive.md)).
 
 | Pattern | Vu dans | Ce qu'on fait |
 | --- | --- | --- |
-| Binaire `tools` headless (render, check, bench, snapshot) | Drum Foundry | Cible `<Plugin>Tools` dès la phase 1 |
-| Snapshot de paramètres par bloc | Drum Foundry (`DrumParams`) | Structure `Params` remplie par `plugin/`, seule entrée du DSP |
-| DSP compilable sans JUCE, tests sans JUCE | TetraDrive (`src/` + `tests/`) | Cible `dsp` sans JUCE |
-| Paquets internes fixes de 32 échantillons | Drum Foundry | Pour tout algorithme sensible à la taille de bloc |
-| Latence fixe quelle que soit la configuration | Drum Foundry | Réserver la latence du pire cas |
-| Crossfade de 20 ms quand la chaîne change | Drum Foundry | Pour tout réordonnancement ou changement de mode audible |
-| Construction lourde en arrière plan puis crossfade | Drum Foundry (réverbe Natural) | IR, tables d'onde, samples |
-| Undo par geste utilisateur, pas par automation | Drum Foundry | Si on fait un undo |
-| Patch JUCE pour automation sample accurate en VST3 | TetraDrive | Évaluer sur JUCE 9 (question ouverte dans `STATE.md`) |
+| Binaire `tools` headless (render, check, bench, snapshot) qui pilote le vrai processeur | Drum Foundry | Cible `<Plugin>Tools` dès la phase 1, **lancée en CI** (Drum Foundry ne le fait pas) |
+| Snapshot de paramètres par bloc, **assaini à la lecture** (NaN remplacé par le défaut, valeurs bornées) | Drum Foundry (`ParamReader`) | Structure `Params` remplie par `plugin/`, seule entrée du DSP |
+| DSP compilable et testé sans JUCE | TetraDrive (`src/` + `tests/`) | Cible `dsp` sans JUCE. Drum Foundry, lui, ne le fait pas |
+| Automation découpée aux points d'automation, avec rampes linéaires | TetraDrive (patch VST3) | Pertinent puisqu'on ne livre que du VST3 ; patch de 59 lignes, propre à JUCE 9 |
+| Latence fixe, complétée par un **retard en fin de chaîne** | Drum Foundry | Réserver la latence du pire cas et compenser le reste par un délai. TetraDrive fait l'inverse (latence qui varie avec l'oversampling, bypass non compensé) : à éviter |
+| Latence d'oversampling calée sur un nombre entier d'échantillons | TetraDrive (47, 55, 58) | Choisir des filtres dont le retard est entier |
+| Clipper qui n'oversample que la différence non linéaire | Drum Foundry (`Clipper`) | Le signal reste identique au bit près sous le genou |
+| Changement d'ordre de la chaîne : fondu de sortie 10 ms, reset, fondu d'entrée 10 ms | Drum Foundry | Pour tout réordonnancement ou changement de mode audible |
+| Paquets internes de taille fixe **pour les algorithmes qui en ont besoin** | Drum Foundry (réverbe Cloud, 32 échantillons) | Leur LFO dépend encore de la taille de bloc et leur test ne le voit pas : notre test de taille de bloc doit activer la modulation |
+| Construction lourde en arrière plan, objets remplacés mis sur une **liste de retrait** indexée par numéro de série | Drum Foundry (samples, réverbe Natural) | IR, tables d'onde, samples |
+| Version d'état entière avec migrations en chaîne | Drum Foundry (version 10) | Une fonction de migration par version |
 | Invariants entre paramètres (crossovers ordonnés, 1/12 d'octave min) | TetraDrive | Appliqués dans le snapshot, testés |
-| Migration d'état avec valeurs de repli | TetraDrive (sessions < 1.1.0) | Version dans l'état, fichiers d'état gardés en test |
-| Version lue dans `CHANGELOG.md`, cohérence vérifiée en CI | TetraDrive, Drum Foundry | Une seule source de version |
-| Carte du code (chemin → rôle) dans la doc | Drum Foundry | `docs/CODEMAP.md` |
+| Version unique, cohérence vérifiée en CI | Drum Foundry, TetraDrive | Une seule source de version |
+| Carte du code (chemin → rôle) | Drum Foundry | `docs/CODEMAP.md` |
 | Code vendored avec `PATCHES.md` | Drum Foundry (Cloud Seed) | Chaque dépendance modifiée documente ses patchs |
+
+**À ne pas reprendre**, vu chez eux :
+
+1. Insérer des options au milieu d'une liste de choix : chaque insertion force une migration des anciennes sessions. On ajoute en fin de liste.
+2. Garder `ParameterID` en version 1 malgré des ajouts (les deux projets).
+3. Copier de grosses tables sur le thread audio (Drum Foundry copie 196 Ko).
+4. Un rendu non borné déclenché par un paramètre (Offset négatif chez Drum Foundry, jusqu'à 4 fois le budget d'un bloc selon leur propre audit).
+5. Un bench qui ne mesure que la moyenne : on mesure le pire cas et on fixe un seuil.
+6. Pas de CI (TetraDrive) ou une CI sans tests ni pluginval (Drum Foundry).
 
 ## Règle de choix
 

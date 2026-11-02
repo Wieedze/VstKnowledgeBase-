@@ -7,7 +7,7 @@ Les phases sont fermées par un gate. On ne passe pas à la suivante tant que le
 1. `/grill-me` sur l'idée du plugin.
 2. Écrire `docs/SPEC.md` : une page. Ce que fait le plugin, pour qui, les 3 à 5 fonctionnalités de la v1, et une section **Hors v1** au moins aussi longue.
 3. ADR 0001 : licence (AGPL ou commerciale) et donc ce qu'on a le droit de copier.
-4. ADR 0002 : instrument ou effet, formats, codes plugin et fabricant.
+4. ADR 0002 : instrument ou effet, codes plugin et fabricant. Le format est déjà fixé : VST3 uniquement (ADR 0003 du playbook).
 
 **Gate 0** : SPEC relue et figée, deux ADR écrits.
 

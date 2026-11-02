@@ -24,7 +24,9 @@ Un agent ne peut pas écouter le plugin. Tout ce qui compte doit donc être vér
 * Indépendance au sample rate quand c'est attendu (44,1 / 48 / 96 kHz).
 * Pas d'allocation ni de lock dans `process` : [RealtimeSanitizer](https://clang.llvm.org/docs/RealtimeSanitizer.html) (clang, `-fsanitize=realtime`, fonctions temps réel marquées `[[clang::nonblocking]]`) dans un job CI dédié. Rien à coder nous mêmes.
 
-Utiliser [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) pour que les échecs affichent la forme du signal en ASCII.
+Dans les tests de `plugin/`, [melatonin_audio_sparklines](https://github.com/sudara/melatonin_audio_sparklines) affiche la forme du signal en ASCII quand un test échoue. Il dépend de `juce_dsp` : pas dans les tests DSP sans JUCE.
+
+Le test d'indépendance à la taille de bloc doit **activer la modulation** (LFO routés) : c'est le cas que Drum Foundry rate.
 
 ## Niveau 3 : plugin
 
@@ -72,6 +74,8 @@ La cible `dsp` est une bibliothèque CMake sans lien vers JUCE. Si quelqu'un ajo
 ```
 
 ## CI GitHub Actions (à partir de Pamplejuce)
+
+Pamplejuce fournit le build sur 3 OS, Catch2 et pluginval 10 (VST3). Il ne fournit **pas** `tools check`, `tools compare`, clang-format en CI, le budget de benchmarks ni le job RTSan : c'est à nous de les ajouter (étapes dans [`references/pamplejuce.md`](references/pamplejuce.md)). Sans certificats, ses étapes de signature font échouer la CI : les conditionner à la présence des secrets.
 
 Sur chaque PR, Linux + Windows + macOS :
 

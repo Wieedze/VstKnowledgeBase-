@@ -44,7 +44,7 @@ Pièges connus, relevés dans les README de Drum Foundry et TetraDrive :
 | Réglage | Décision | Pourquoi |
 | --- | --- | --- |
 | `PLUGIN_MANUFACTURER_CODE`, `PLUGIN_CODE` | 4 caractères uniques, fixés une fois pour toutes | Les changer casse les sessions |
-| `FORMATS` | `VST3 Standalone` (Windows) ; ajouter `AU` sur macOS | Le standalone sert au debug rapide |
+| `FORMATS` | `VST3` uniquement (ADR 0003) | Ni AU, ni AUv3, ni CLAP, ni Standalone. Pour déboguer hors DAW : l'AudioPluginHost de JUCE (`extras/AudioPluginHost`) charge le VST3 |
 | `IS_SYNTH`, `NEEDS_MIDI_INPUT` | Selon instrument ou effet | |
 | Automation sample accurate | Évaluer le patch de TetraDrive (`patches/juce-vst3-sample-accurate.patch`) | Le wrapper VST3 de JUCE ne passe que la dernière valeur par bloc |
 | `JUCE_DISPLAY_SPLASH_SCREEN` | Selon la licence | Lié à la licence JUCE |
