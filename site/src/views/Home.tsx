@@ -19,10 +19,19 @@ export function Home() {
   const rm = roadmaps[0]?.roadmap;
   const tasks = rm ? rm.lanes.flatMap((l) => l.tasks) : [];
   const done = tasks.filter((t) => t.status === "done").length;
+  const pct = tasks.length ? Math.round((100 * done) / tasks.length) : 0;
+  const phases = rm ? rm.lanes.filter((l) => /^p\d+$/.test(l.id)) : [];
+  const phaseClass = (id: string) => {
+    const n = Number(id.slice(1));
+    if (!rm || rm.state.phase === null) return "";
+    return n < rm.state.phase ? "done" : n === rm.state.phase ? "now" : "";
+  };
+  const [feature, ...rest] = CARDS;
+
   return (
     <section className="view">
-      <header>
-        <span className="label">JUCE · VST3 only</span>
+      <header className="hero">
+        <span className="label kicker">JUCE · VST3 only</span>
         <h1>VstKnowledgeBase</h1>
         <p className="lede">
           What we know and what we decided to build VST3 plugins with JUCE: projects studied in their code, libraries to reuse, real-time rules,
@@ -44,34 +53,65 @@ export function Home() {
           </div>
           <div>
             <span className="label">Gate to pass</span>
-            <span>{rm.state.gate}</span>
+            <span className="gate">{rm.state.gate}</span>
           </div>
           <div>
             <span className="label">Roadmap</span>
-            <span>
-              {done} of {tasks.length} tasks done
+            <span className="big">
+              {done} <small>of {tasks.length} tasks done</small>
             </span>
+            <div className="meter" role="img" aria-label={`${pct}% of tasks done`}>
+              <span style={{ width: pct + "%" }} />
+            </div>
           </div>
         </div>
       )}
-      <div className="cards">
-        {CARDS.map(([href, k, t, d]) => (
-          <a className="card" href={href} key={href}>
-            <span className="label">{k}</span>
-            <b>{t}</b>
-            <p>{d}</p>
-          </a>
-        ))}
+      <div className="home-grid">
+        <div>
+          <div className="sec-head">
+            <h2>Explore</h2>
+          </div>
+          <div className="cards">
+            <Card c={feature} feature>
+              {phases.length > 0 && (
+                <div className="steps" style={{ ["--n" as string]: phases.length }}>
+                  {phases.map((l) => (
+                    <span className={phaseClass(l.id)} key={l.id} title={l.title}>
+                      <em>{l.title.replace(/^Phase \d+\s*·\s*/, "")}</em>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </Card>
+            {rest.map((c) => (
+              <Card c={c} key={c[0]} />
+            ))}
+          </div>
+        </div>
+        <aside className="feed" aria-label="Latest entries">
+          <div className="sec-head">
+            <h2>Latest entries</h2>
+            <a href="#/decisions">Full log →</a>
+          </div>
+          <ol className="journal">
+            {journal.slice(0, 5).map((e) => (
+              <EntryItem e={e} key={e.type + e.scope + e.ref + e.title} />
+            ))}
+          </ol>
+        </aside>
       </div>
-      <h2>Latest entries</h2>
-      <ol className="journal">
-        {journal.slice(0, 4).map((e) => (
-          <EntryItem e={e} key={e.type + e.scope + e.ref + e.title} />
-        ))}
-      </ol>
-      <p>
-        <a href="#/decisions">Full decision log →</a>
-      </p>
     </section>
+  );
+}
+
+function Card({ c: [href, k, t, d], feature, children }: { c: (typeof CARDS)[number]; feature?: boolean; children?: React.ReactNode }) {
+  return (
+    <a className={`card${feature ? " feature" : ""}`} href={href} data-k={k}>
+      <span className="ico" aria-hidden="true">{t[0]}</span>
+      <span className="label">{k}</span>
+      <b>{t}</b>
+      <p>{d}</p>
+      {children}
+    </a>
   );
 }

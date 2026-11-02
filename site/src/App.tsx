@@ -33,6 +33,7 @@ export function App() {
 
   const page = pageByPath.get(route);
   const title = VIEWS[route] ?? page?.title ?? "Not found";
+  const section = route === "compare" ? "Compare" : route in VIEWS ? "Tracking" : page ? (page.group === "Hidden" ? "Log" : page.group) : "";
   useEffect(() => {
     document.title = route === "" ? "VstKnowledgeBase" : `${title} · VstKnowledgeBase`;
   }, [route, title]);
@@ -59,8 +60,15 @@ export function App() {
     <div className="app">
       <aside className="side" aria-label="Index">
         <a className="brand" href="#/">
-          <span className="label">VST3 playbook</span>
-          <b>VstKnowledgeBase</b>
+          <span className="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              <path d="M2 10h2l2-6 3 12 3-9 2 5 2-2h2" />
+            </svg>
+          </span>
+          <span className="brand-text">
+            <b>VstKnowledgeBase</b>
+            <span className="label">VST3 playbook</span>
+          </span>
         </a>
         <button type="button" className="menu-btn" aria-expanded={open} aria-controls="nav" onClick={() => setOpen(!open)}>
           Index
@@ -85,32 +93,43 @@ export function App() {
                 {link("#/compare", "Compare projects")}
               </div>
               {GROUP_ORDER.map((g) => (
-                <div className="grp" key={g}>
-                  <span className="label">{g}</span>
+                <details className="grp" key={g} open>
+                  <summary className="label">{g}</summary>
                   {pages.filter((p) => p.group === g).map((p) => link("#/" + p.path, shortTitle(p.title)))}
-                </div>
+                </details>
               ))}
-              <div className="grp ext">
-                <a href={REPO_URL} target="_blank" rel="noopener">GitHub repo ↗</a>
-              </div>
             </>
           )}
         </nav>
       </aside>
       <main className="main">
-        {route === "" && <Home />}
-        {route === "roadmap" && <RoadmapView />}
-        {route === "decisions" && <Decisions />}
-        {route === "compare" && <Compare />}
-        {page && <DocPage page={page} />}
-        {!(route in VIEWS) && !page && (
-          <section className="view">
-            <h2>Page not found</h2>
-            <p>
-              Nothing at <code>{route}</code>. <a href="#/">Back to the home page</a>.
-            </p>
-          </section>
-        )}
+        <div className="topbar">
+          <div className="crumbs">
+            {section && (
+              <>
+                <span>{section}</span>
+                <i>/</i>
+              </>
+            )}
+            <b>{title}</b>
+          </div>
+          <a className="gh" href={REPO_URL} target="_blank" rel="noopener">GitHub ↗</a>
+        </div>
+        <div className="content" key={route}>
+          {route === "" && <Home />}
+          {route === "roadmap" && <RoadmapView />}
+          {route === "decisions" && <Decisions />}
+          {route === "compare" && <Compare />}
+          {page && <DocPage page={page} />}
+          {!(route in VIEWS) && !page && (
+            <section className="view">
+              <h2>Page not found</h2>
+              <p>
+                Nothing at <code>{route}</code>. <a href="#/">Back to the home page</a>.
+              </p>
+            </section>
+          )}
+        </div>
         <footer>Built from the repo on every push to main.</footer>
       </main>
     </div>
