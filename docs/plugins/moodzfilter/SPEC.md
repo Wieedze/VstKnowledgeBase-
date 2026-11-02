@@ -2,6 +2,7 @@
 
 **Date**: 2026-11-02
 **Status**: frozen (phase 0). Any change goes through `/grill-with-docs`, then an ADR, then this SPEC amended.
+**Amended**: 2026-11-02, gain ranges (ADR 0004).
 
 ## In one sentence
 
@@ -44,8 +45,8 @@ Oversampling surrounds the drive and the filter, the only non-linear stages. The
 | LFO depth | 0 to ±4 octaves on the cutoff | 0 | Smoothed |
 | Oversampling | Off, 2x, 4x | 2x | Fixed latency for a given setting, reported to the host |
 | Mix | 0 to 100 % | 100 % | Smoothed |
-| Gain in | −24 to +24 dB | 0 dB | Smoothed |
-| Gain out | −24 to +24 dB | 0 dB | Smoothed |
+| Gain in | −∞ to +12 dB | 0 dB | Smoothed; lowest value = silence (ADR 0004) |
+| Gain out | −∞ to +6 dB | 0 dB | Smoothed; lowest value = silence (ADR 0004) |
 
 ## Filter models
 
