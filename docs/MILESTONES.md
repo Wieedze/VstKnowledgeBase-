@@ -4,6 +4,20 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-02 · Index website online
+
+Project: Playbook
+Link: https://wieedze.github.io/VstKnowledgeBase-/
+
+PR #1 (playbook) and PR #2 (index website and English translation) are merged into main. The site in site/ (Bun, React, Vite) is built by GitHub Actions and published on GitHub Pages on every push to main. It reads the roadmaps, milestones, ADRs and post-mortems directly from the repo.
+
+## 2026-11-02 · Phase 0 gate passed: MoodzFilter identity set
+
+Project: MoodzFilter
+Link: docs/plugins/moodzfilter/choices/0002-identity-and-platform.md
+
+ADR 0002 accepted, chosen by Maxime: company name Radikal Moodz, manufacturer code Rdkm, plugin code Mzf1, VST3 only, Windows only for v1. With the SPEC frozen and the AGPL licence ADR, phase 0 is closed and MoodzFilter moves to phase 1, the skeleton.
+
 ## 2026-11-02 · MoodzFilter scope frozen
 
 Project: MoodzFilter

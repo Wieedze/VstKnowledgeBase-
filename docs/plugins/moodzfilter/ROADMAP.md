@@ -1,8 +1,8 @@
 ---
 plugin: MoodzFilter
-phase: 0
-phase_title: Decide
-gate: Validate the manufacturer name and plugin codes (ADR 0002), then move to phase 1
+phase: 1
+phase_title: Skeleton
+gate: Green CI, green pluginval 10, VST3 loaded in the DAW, STATE.md up to date
 updated: 2026-11-02
 ---
 
@@ -14,8 +14,8 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 
 ## playbook · Playbook
 
-- [~] Review and merge PR #1 · playbook, study notes, MoodzFilter scope
-- [~] Put the index online on GitHub Pages · Bun + React + Vite site in site/
+- [x] Review and merge PR #1 · playbook, study notes, MoodzFilter scope
+- [x] Put the index online on GitHub Pages · Bun + React + Vite site in site/
 - [ ] Have the repo checked by independent agents · compare every claim with the code and the licences, fix
 - [ ] Check the remaining licences · MTS-ESP, OB-Xf assets, AKWF waveforms, BYOD IRs and models
 
@@ -23,7 +23,7 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 
 - [x] Define the scope and write the SPEC · docs/plugins/moodzfilter/SPEC.md
 - [x] ADR 0001 · AGPL licence
-- [~] ADR 0002 · validate manufacturer and plugin codes · Moodz, Mood, Mzf1 proposed
+- [x] ADR 0002 · validate manufacturer and plugin codes · Radikal Moodz, Rdkm, Mzf1 accepted
 
 ## p1 · Phase 1 · Skeleton
 
