@@ -1,7 +1,7 @@
 # 0006 — Five filter models, Mode with a low pass fallback, per-model settings
 
 **Date**: 2026-11-03
-**Status**: accepted (amends SPEC v1; its Mode parameter is superseded by ADR 0007)
+**Status**: accepted (amends SPEC v1; its Mode parameter is superseded by ADR 0007; the shape of its per-model settings is set by ADR 0008)
 
 ## Context
 

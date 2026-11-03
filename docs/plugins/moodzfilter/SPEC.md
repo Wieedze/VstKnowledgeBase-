@@ -2,7 +2,7 @@
 
 **Date**: 2026-11-02
 **Status**: frozen (phase 0). Any change goes through `/grill-with-docs`, then an ADR, then this SPEC amended.
-**Amended**: 2026-11-02, gain ranges (ADR 0004). 2026-11-03, five filter models, per-model settings (ADR 0006); model and passband in one list, no Mode parameter (ADR 0007).
+**Amended**: 2026-11-02, gain ranges (ADR 0004). 2026-11-03, five filter models, per-model settings (ADR 0006); model and passband in one list, no Mode parameter (ADR 0007); per-model settings as three parameters (ADR 0008).
 
 ## In one sentence
 
@@ -36,7 +36,9 @@ Oversampling surrounds the drive and the filter, the only non-linear stages. The
 | Parameter | Range | Default | Note |
 | --- | --- | --- | --- |
 | Model | 9 entries: each of the 5 models with each passband it has (see below) | Cytomic SVF Low-pass | List frozen from task 0009, additions at the end of the list only (ADRs 0006, 0007) |
-| Model settings | Slope (OB-Xd 4-pole, Diode Ladder), slope Morph (OB-Xd 4-pole), saturation (K35), sub-model (Vintage Ladder) | The task 0008 audition settings | Exact parameters, ranges and defaults decided by listening in task 0010 (ADR 0006) |
+| Slope | 6 to 24 dB per octave, continuous | 24 dB | OB-Xd 4-pole continuously (Morph), Diode Ladder at the nearest 6 dB step; ignored by other models (ADR 0008) |
+| K35 saturation | 0 to 100 % | 25 % (Mild) | K35 Low-pass and High-pass; smoothed (ADR 0008) |
+| Vintage variant | Runge-Kutta, Huovilainen, Huovilainen 2010, each with or without gain compensation | Runge-Kutta compensated | Vintage Ladder Low-pass (ADR 0008) |
 | Cutoff | 20 Hz to 20 kHz, logarithmic scale | 1 kHz | Smoothed |
 | Resonance | 0 to 100 % | 20 % | Smoothed |
 | Drive | 0 to 24 dB | 0 dB | Smoothed |
