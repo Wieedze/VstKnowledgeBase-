@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-03 · MoodzFilter per-model settings
+
+Project: MoodzFilter
+Link: docs/plugins/moodzfilter/choices/0008-per-model-settings-as-parameters.md
+
+ADR 0008, chosen with Maxime, settles the per-model settings left open by ADRs 0006 and 0007 and amends SPEC v1: they are three separate parameters, not more Model list entries. Slope goes from 6 to 24 dB/oct (OB-Xd 4-pole continuous through its Morph mode, Diode Ladder at the nearest 6 dB step), K35 saturation from 0 to 100 % (25 % = Mild), and Vintage variant picks one of the 6 Vintage Ladder sub-models. Task 0010 delivered them with defaults that give back the task 0009 sound, passed the task-verifier in one round, and Maxime approved it in Ableton Live on 2026-11-03 at 16:32 CET (PR #13). The next item, the crossfade on a Model change, now also covers a Diode Ladder slope step and a Vintage variant change.
+
 ## 2026-11-03 · MoodzFilter scope: five filter models
 
 Project: MoodzFilter
