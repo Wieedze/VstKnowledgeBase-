@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-03 · MoodzFilter model changes without clicks
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/14
+
+Task 0011 meets SPEC success criterion 3: a Model change, a Diode Ladder slope step or a Vintage variant change during playback no longer clicks. The filter variants moved into a crossfading filter bank in the dsp layer, tested without JUCE: the incoming variant starts from a clean state and the two outputs are crossfaded linearly over 20 ms, with at most two variants running at once. The slope wobbling across a Diode step passes with the crossfade alone, so no hysteresis was added, and no golden reference changed. The task passed the task-verifier in one round and Maxime approved the CI installer in Ableton Live on 2026-11-03 at 20:33 CET. The next item is input drive with 2x and 4x oversampling.
+
 ## 2026-11-03 · MoodzFilter per-model settings
 
 Project: MoodzFilter
