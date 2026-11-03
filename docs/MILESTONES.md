@@ -7,9 +7,9 @@ ADRs and post-mortems do not need to be copied here: the index reads them direct
 ## 2026-11-03 · MoodzFilter scope: five filter models
 
 Project: MoodzFilter
-Link: docs/plugins/moodzfilter/choices/0006-five-filter-models.md
+Link: docs/plugins/moodzfilter/choices/0007-model-and-passband-in-one-list.md
 
-ADR 0006, chosen by Maxime after listening to the 7 low pass candidates in Ableton Live in task 0008, amends SPEC v1: MoodzFilter ships 5 filter models instead of 4, frozen in this order: Cytomic SVF, Vintage Ladder, OB-Xd 4-pole, Diode Ladder, K35. Mode stays a fixed list of 4 passbands, and a passband the model lacks plays low pass. Per-model settings (slope, Morph, K35 saturation, Vintage Ladder sub-model) become v1 parameters, shaped by listening in task 0010. Model blending and a random cutoff curve stay out of v1. Task 0009 starts the work.
+ADR 0006, chosen by Maxime after listening to the 7 low pass candidates in Ableton Live in task 0008, amends SPEC v1: MoodzFilter ships 5 filter models instead of 4 (Cytomic SVF, Vintage Ladder, OB-Xd 4-pole, Diode Ladder, K35). ADR 0007, chosen during task 0009 so a model shows only the passbands it has, replaces the Mode parameter of ADR 0006: the Model list holds the 9 model and passband pairs that exist, in a frozen order (Cytomic SVF Low-pass, High-pass, Band-pass, Notch; Vintage Ladder Low-pass; OB-Xd 4-pole Low-pass; Diode Ladder Low-pass; K35 Low-pass, High-pass), with no Mode parameter and no fallback. Task 0009 delivered that list and Maxime checked it in Live on 2026-11-03. Per-model settings (slope, Morph, K35 saturation, Vintage Ladder sub-model) stay v1 parameters, shaped by listening in task 0010. Model blending and a random cutoff curve stay out of v1.
 
 ## 2026-11-02 · MoodzFilter gate 1 passed
 

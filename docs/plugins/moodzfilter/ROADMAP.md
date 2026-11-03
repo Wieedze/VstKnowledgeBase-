@@ -40,8 +40,9 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 
 - [x] Integrate sst-filters in the dsp layer · task 0007, ADR 0005, GPL v3 via CPM, 7 low pass candidates listed, https://github.com/Wieedze/MoodzFilter/pull/9
 - [x] Listen to the 7 low pass candidates and choose the 4 models · task 0008 audition build, Model (7 candidates), Cutoff and Resonance in the plugin, listened in Ableton Live on 2026-11-03: all 7 work, Maxime kept 5 (Diode Ladder 24 dB, K35, Vintage Ladder, Cytomic SVF, OB-Xd 4-pole 24 dB), golden change approved; keeping 5 instead of the SPEC's 4 is a SPEC change pending in task 0009, https://github.com/Wieedze/MoodzFilter/pull/11
-- [~] Freeze the five filter models and add Mode · task 0009, ADR 0006, Model frozen as Cytomic SVF, Vintage Ladder, OB-Xd 4-pole, Diode Ladder, K35; Mode low pass, high pass, band pass, notch, a passband the model lacks plays low pass; Cutoff and Resonance already shipped in task 0008
-- [ ] Per-model settings: slope, Morph, K35 saturation, Vintage Ladder sub-model · task 0010, ADR 0006, the parameters (count, ranges, defaults) are decided by listening
+- [x] Filter list: five models with their passbands · task 0009, ADRs 0006 and 0007, Model lists 9 entries (Cytomic SVF Low-pass, High-pass, Band-pass, Notch; Vintage Ladder Low-pass; OB-Xd 4-pole Low-pass; Diode Ladder Low-pass; K35 Low-pass, High-pass), Mode dropped so a model shows only the passbands it has, Maxime's Live test passed on 2026-11-03, https://github.com/Wieedze/MoodzFilter/pull/12
+- [ ] Per-model settings: slope, Morph, K35 saturation, Vintage Ladder sub-model · task 0010, ADR 0006, first decision per ADR 0007 is whether the settings join the Model list or stay separate parameters, then count, ranges and defaults are decided by listening
+- [ ] Crossfade on a Model change · SPEC success criterion 3, no click when the model changes during playback
 - [ ] Input drive with 2x and 4x oversampling · latency reported, dry path delayed
 - [ ] BPM-synced LFO on the cutoff · block size test with the LFO active
 - [ ] Dry/wet mix, in/out gains, smoothing everywhere
