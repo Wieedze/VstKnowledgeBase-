@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-03 · MoodzFilter scope: five filter models
+
+Project: MoodzFilter
+Link: docs/plugins/moodzfilter/choices/0006-five-filter-models.md
+
+ADR 0006, chosen by Maxime after listening to the 7 low pass candidates in Ableton Live in task 0008, amends SPEC v1: MoodzFilter ships 5 filter models instead of 4, frozen in this order: Cytomic SVF, Vintage Ladder, OB-Xd 4-pole, Diode Ladder, K35. Mode stays a fixed list of 4 passbands, and a passband the model lacks plays low pass. Per-model settings (slope, Morph, K35 saturation, Vintage Ladder sub-model) become v1 parameters, shaped by listening in task 0010. Model blending and a random cutoff curve stay out of v1. Task 0009 starts the work.
+
 ## 2026-11-02 · MoodzFilter gate 1 passed
 
 Project: MoodzFilter
