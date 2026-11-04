@@ -2,7 +2,7 @@
 
 **Date**: 2026-11-02
 **Status**: frozen (phase 0). Any change goes through `/grill-with-docs`, then an ADR, then this SPEC amended.
-**Amended**: 2026-11-02, gain ranges (ADR 0004). 2026-11-03, five filter models, per-model settings (ADR 0006); model and passband in one list, no Mode parameter (ADR 0007); per-model settings as three parameters (ADR 0008).
+**Amended**: 2026-11-02, gain ranges (ADR 0004). 2026-11-03, five filter models, per-model settings (ADR 0006); model and passband in one list, no Mode parameter (ADR 0007); per-model settings as three parameters (ADR 0008). 2026-11-04, constant latency, Drive curve parameter (ADR 0009).
 
 ## In one sentence
 
@@ -29,7 +29,7 @@ input → gain in → drive (oversampled) → filter (chosen model) → dry/wet 
                          synced LFO (cutoff)
 ```
 
-Oversampling surrounds the drive and the filter, the only non-linear stages. The dry path is delayed by the oversampling latency so that the mix does not create comb filtering.
+Oversampling surrounds the drive and the filter, the only non-linear stages. The dry path is delayed by the oversampling latency so that the mix does not create comb filtering. The plugin reports the same latency at every Oversampling setting, Off and 2x being delayed to match 4x, so changing it during playback never makes the host realign (ADR 0009).
 
 ## v1 parameters
 
@@ -41,11 +41,12 @@ Oversampling surrounds the drive and the filter, the only non-linear stages. The
 | Vintage variant | Runge-Kutta, Huovilainen, Huovilainen 2010, each with or without gain compensation | Runge-Kutta compensated | Vintage Ladder Low-pass (ADR 0008) |
 | Cutoff | 20 Hz to 20 kHz, logarithmic scale | 1 kHz | Smoothed |
 | Resonance | 0 to 100 % | 20 % | Smoothed |
-| Drive | 0 to 24 dB | 0 dB | Smoothed |
+| Drive | 0 to 24 dB | 0 dB | Smoothed; transparent at 0 dB (ADR 0009) |
+| Drive curve | Symmetric, Asymmetric | Symmetric | ADR 0009 |
 | LFO shape | Sine, triangle, sawtooth, square | Sine | |
 | LFO rate | Values synced to the host BPM, from 4 bars to 1/32, with triplets and dotted values | 1/4 | |
 | LFO depth | 0 to ±4 octaves on the cutoff | 0 | Smoothed |
-| Oversampling | Off, 2x, 4x | 2x | Fixed latency for a given setting, reported to the host |
+| Oversampling | Off, 2x, 4x | 2x | One constant latency for all settings, reported to the host (ADR 0009) |
 | Mix | 0 to 100 % | 100 % | Smoothed |
 | Gain in | −∞ to +12 dB | 0 dB | Smoothed; lowest value = silence (ADR 0004) |
 | Gain out | −∞ to +6 dB | 0 dB | Smoothed; lowest value = silence (ADR 0004) |

@@ -43,9 +43,10 @@ Update the header (`phase`, `gate`) when a gate is passed, and add a milestone i
 - [x] Filter list: five models with their passbands · task 0009, ADRs 0006 and 0007, Model lists 9 entries (Cytomic SVF Low-pass, High-pass, Band-pass, Notch; Vintage Ladder Low-pass; OB-Xd 4-pole Low-pass; Diode Ladder Low-pass; K35 Low-pass, High-pass), Mode dropped so a model shows only the passbands it has, Maxime's Live test passed on 2026-11-03, https://github.com/Wieedze/MoodzFilter/pull/12
 - [x] Per-model settings: Slope, K35 saturation, Vintage variant · task 0010, ADR 0008, three parameters: Slope 6 to 24 dB/oct (OB-Xd 4-pole continuous through Morph, Diode Ladder at the nearest 6 dB step), K35 saturation 0 to 100 % (25 % = Mild), Vintage variant (6 sub-models); defaults give back the task 0009 sound, Maxime's Live test approved on 2026-11-03 at 16:32 CET, https://github.com/Wieedze/MoodzFilter/pull/13
 - [x] Crossfade on a Model change · task 0011, 20 ms linear crossfade between filter variants in a dsp crossfading filter bank: a Model change, a Diode Ladder slope step and a Vintage variant change no longer click (SPEC success criterion 3), the slope wobble passes without hysteresis, no golden change, Maxime's Live test approved on 2026-11-03 at 20:33 CET, https://github.com/Wieedze/MoodzFilter/pull/14
-- [ ] Input drive with 2x and 4x oversampling · latency reported, dry path delayed
+- [ ] Oversampling Off, 2x, 4x around the filter · task 0012 (in progress), ADR 0009, constant latency reported, crossfade on a change
+- [ ] Input drive and Drive curve · ADR 0009, oversampled, transparent at 0 dB
 - [ ] BPM-synced LFO on the cutoff · block size test with the LFO active
-- [ ] Dry/wet mix, in/out gains, smoothing everywhere
+- [ ] Dry/wet mix (dry path delayed by the constant latency), in/out gains, smoothing everywhere
 - [ ] CPU budget and listening in Live · gate, golden, budget met, listening approved
 
 ## p3 · Phase 3 · State
