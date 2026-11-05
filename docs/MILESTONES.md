@@ -4,6 +4,13 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-05 · MoodzFilter oversampling with one constant latency
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/15
+
+Task 0012 runs the filter at Off, 2x or 4x through a new Oversampling parameter, 2x by default. Following ADR 0009, the plugin reports one latency at every setting and sample rate, 40 samples (`./Builds/PluginTests "The reported latency is the same at every setting and rate"`), so changing the setting never makes the host realign the track, and host bypass delays the input by the same amount. A change resets the incoming path, lets it settle unheard during a pre-roll, then crossfades it in. The pre-roll came from the code review, which found a click the earlier tests hid because they ran at a mid cutoff; a test with the filter wide open now covers it. Every golden reference changed, in a separate commit after Maxime listened. The task passed the task-verifier in one round and Maxime approved the final installer in Ableton Live on 2026-11-05 at about 09:30 CET. PR #15 is open, waiting for his merge. The next item is Input drive and Drive curve.
+
 ## 2026-11-03 · MoodzFilter model changes without clicks
 
 Project: MoodzFilter
