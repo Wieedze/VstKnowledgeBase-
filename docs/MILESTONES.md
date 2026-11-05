@@ -4,12 +4,19 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-05 · MoodzFilter input drive and its two curves
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/16
+
+Task 0013 adds a Drive parameter that saturates the signal before the filter, inside each oversampling path, and a Drive curve parameter, Symmetric by default or Asymmetric for even harmonics too (ADR 0009). At 0 dB the signal passes untouched (`./Builds/DspTests "Drive at 0 dB leaves the signal untouched"`) and no golden reference changed. A DC blocker works on the even part of the Asymmetric curve only, so neither the dry signal nor the limiting odd part is filtered: the code review proposed filtering the whole curve, and measuring that showed it overshooting in the bass. The task passed the task-verifier on its fourth round, the first three failing on test coverage and evidence, none on behaviour. Maxime approved the CI installer in Ableton Live on 2026-11-05 at about 10:25 CET. PR #16 is open, waiting for his merge. Still open, in `FUTURE.md`: one non-finite input sample leaves the filter state non-finite until a reset, which predates this task and is to be handled before the release. The next item is the BPM-synced LFO on the cutoff, not started.
+
 ## 2026-11-05 · MoodzFilter oversampling with one constant latency
 
 Project: MoodzFilter
 Link: https://github.com/Wieedze/MoodzFilter/pull/15
 
-Task 0012 runs the filter at Off, 2x or 4x through a new Oversampling parameter, 2x by default. Following ADR 0009, the plugin reports one latency at every setting and sample rate, 40 samples (`./Builds/PluginTests "The reported latency is the same at every setting and rate"`), so changing the setting never makes the host realign the track, and host bypass delays the input by the same amount. A change resets the incoming path, lets it settle unheard during a pre-roll, then crossfades it in. The pre-roll came from the code review, which found a click the earlier tests hid because they ran at a mid cutoff; a test with the filter wide open now covers it. Every golden reference changed, in a separate commit after Maxime listened. The task passed the task-verifier in one round and Maxime approved the final installer in Ableton Live on 2026-11-05 at about 09:30 CET. PR #15 is open, waiting for his merge. The next item is Input drive and Drive curve.
+Task 0012 runs the filter at Off, 2x or 4x through a new Oversampling parameter, 2x by default. Following ADR 0009, the plugin reports one latency at every setting and sample rate, 40 samples (`./Builds/PluginTests "The reported latency is the same at every setting and rate"`), so changing the setting never makes the host realign the track, and host bypass delays the input by the same amount. A change resets the incoming path, lets it settle unheard during a pre-roll, then crossfades it in. The pre-roll came from the code review, which found a click the earlier tests hid because they ran at a mid cutoff; a test with the filter wide open now covers it. Every golden reference changed, in a separate commit after Maxime listened. The task passed the task-verifier in one round and Maxime approved the final installer in Ableton Live on 2026-11-05 at about 09:30 CET. PR #15 was merged on 2026-11-05 (merge 5236723). The next item is Input drive and Drive curve.
 
 ## 2026-11-03 · MoodzFilter model changes without clicks
 
