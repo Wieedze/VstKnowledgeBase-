@@ -4,12 +4,19 @@ Source of the "Milestone" entries in the index's decision log. One milestone per
 Format: a heading `## YYYY-MM-DD · Title`, then the lines `Project:` and `Link:` (optional), then one summary paragraph.
 ADRs and post-mortems do not need to be copied here: the index reads them directly in `.claude/choices/`, `.claude/learning/` and `docs/plugins/*/choices/`.
 
+## 2026-11-05 · MoodzFilter LFO locked to the host tempo
+
+Project: MoodzFilter
+Link: https://github.com/Wieedze/MoodzFilter/pull/18
+
+Task 0015 adds LFO shape, LFO rate and LFO depth parameters that move the cutoff in time with the host. While the host plays, the song position sets the phase, so the LFO is back on the beat after a stop or a loop (`./Builds/PluginTests "The LFO is locked to the song position"`); stopped, it runs on at the last tempo. The output does not depend on the block size with the LFO active (`./Builds/DspTests "The chain with the LFO does not depend on the block size"`), and that test caught a real defect, a square edge landing on either side of a grid step. At depth 0 the plugin runs as before and no golden reference changed. The task passed the task-verifier on its third round, the first two failing on test coverage and evidence, none on behaviour. Maxime approved the CI installer of 135d6b0 in Ableton Live on 2026-11-05 at about 14:50 CET. PR #18 is open, waiting for Maxime's merge. After the listening Maxime asked for an editor without the scroll, the next item, not started, and for an LFO matrix, which is outside the SPEC and stays in `FUTURE.md`.
+
 ## 2026-11-05 · MoodzFilter input drive and its two curves
 
 Project: MoodzFilter
 Link: https://github.com/Wieedze/MoodzFilter/pull/16
 
-Task 0013 adds a Drive parameter that saturates the signal before the filter, inside each oversampling path, and a Drive curve parameter, Symmetric by default or Asymmetric for even harmonics too (ADR 0009). At 0 dB the signal passes untouched (`./Builds/DspTests "Drive at 0 dB leaves the signal untouched"`) and no golden reference changed. A DC blocker works on the even part of the Asymmetric curve only, so neither the dry signal nor the limiting odd part is filtered: the code review proposed filtering the whole curve, and measuring that showed it overshooting in the bass. The task passed the task-verifier on its fourth round, the first three failing on test coverage and evidence, none on behaviour. Maxime approved the CI installer in Ableton Live on 2026-11-05 at about 10:25 CET. PR #16 was merged on 2026-11-05 (merge 9f15f4c). Still open, in `FUTURE.md`: one non-finite input sample leaves the filter state non-finite until a reset, which predates this task and is to be handled before the release. The next item is the BPM-synced LFO on the cutoff, not started.
+Task 0013 adds a Drive parameter that saturates the signal before the filter, inside each oversampling path, and a Drive curve parameter, Symmetric by default or Asymmetric for even harmonics too (ADR 0009). At 0 dB the signal passes untouched (`./Builds/DspTests "Drive at 0 dB leaves the signal untouched"`) and no golden reference changed. A DC blocker works on the even part of the Asymmetric curve only, so neither the dry signal nor the limiting odd part is filtered: the code review proposed filtering the whole curve, and measuring that showed it overshooting in the bass. The task passed the task-verifier on its fourth round, the first three failing on test coverage and evidence, none on behaviour. Maxime approved the CI installer in Ableton Live on 2026-11-05 at about 10:25 CET. PR #16 was merged on 2026-11-05 (merge 9f15f4c). One non-finite input sample then left the filter state non-finite until a reset, a defect older than this task: task 0014 has since fixed it (PR #17, merge 8758a26). The next item is the BPM-synced LFO on the cutoff, not started.
 
 ## 2026-11-05 · MoodzFilter oversampling with one constant latency
 
